@@ -30,7 +30,7 @@ import {
 } from "../../combos";
 import { isInjectionDebugEnabled } from "../../lib/debug-settings";
 import { injectionDebugLog } from "../../lib/injection-debug-log";
-import { dottedToolName, modelInList, namespacedToolName, toolChoiceToolPredicate } from "../../types";
+import { dottedToolName, modelInList, namespacedToolName, NAMESPACED_BARE_ALIAS_EXCLUDED_NAMES, toolChoiceToolPredicate } from "../../types";
 import type { AdapterEvent, OcxConfig, OcxParsedRequest, OcxProviderConfig, OcxProviderContinuationState, OcxUsage } from "../../types";
 import {
   forceRefreshOAuthAccessSnapshot,
@@ -156,12 +156,9 @@ export function buildToolBridgeMaps(parsed: OcxParsedRequest, budget?: Translato
   // bare spelling is only a safe alias while it names ONE tool and cannot be read as
   // another identity's canonical or dotted spelling.
   // Code-mode helper spellings never gain a bare alias (#4679 review), whatever namespace
-  // declares them: admitting bare `exec` into the declared set would authorize the unrelated
-  // helper normalization that the CODE_MODE_EXEC exception exists to contain. The namespace is
-  // not the safety property here — the bare spelling is — so this is a property of the NAME.
-  const BARE_ECHO_EXCLUDED_NAMES = new Set([
-    "exec", "exec_command", "shell_command", "write_stdin", "apply_patch", "view_image",
-  ]);
+  // declares them and whatever put the alias there. The list is owned by `src/types/tools.ts`,
+  // beside the names it protects, because the copy that used to live here drifted to a single
+  // namespace and had to be widened twice.
   const bareAliasOwners = new Map<string, string | null>();
   for (const t of authorizedTools) {
     // Bare (no-namespace) declarations participate as owners too: a namespaced tool whose
@@ -223,7 +220,7 @@ export function buildToolBridgeMaps(parsed: OcxParsedRequest, budget?: Translato
       // is withdrawn, and only for these six spellings.
       if (
         bareAliasOwners.get(t.name) === JSON.stringify([t.namespace, t.name])
-        && !BARE_ECHO_EXCLUDED_NAMES.has(t.name)
+        && !NAMESPACED_BARE_ALIAS_EXCLUDED_NAMES.has(t.name)
       ) {
         budget?.chargeRetained(new TextEncoder().encode(t.name).byteLength, { kind: "retained_collectors" });
         declaredToolNames.add(t.name);
@@ -257,6 +254,15 @@ export function buildToolBridgeMaps(parsed: OcxParsedRequest, budget?: Translato
   // Some routed providers echo a bare tool_choice selector instead of the flattened catalog
   // name. Accept only selectors the client actually sent and only when the full request catalog
   // contains one tool with that logical name.
+  //
+  // Under the same helper-spelling fence as the echo path above (#4813 review). An explicit bare
+  // selector is a narrower request than a bare echo, but the set it writes into is the same one,
+  // and bare `exec` there is the same single switch: `normalizeDeclaredToolName` would rewrite
+  // an undeclared `apply_patch`, `exec_command` or `write_stdin` onto the selected tool
+  // (src/types/tools.ts). Selection itself is unaffected — `toolAllowedByChoice` resolves the
+  // bare shorthand against the request catalog, not against this map — so the tool is still
+  // chosen, still forced, and still restores under `ns__name` and `ns.name`. What a helper
+  // spelling loses here is only the bare RESTORE alias, exactly as it does above.
   const choice = parsed.options.toolChoice;
   const bareChoiceNames = new Set(
     choice && typeof choice === "object"
@@ -269,6 +275,7 @@ export function buildToolBridgeMaps(parsed: OcxParsedRequest, budget?: Translato
   }
   for (const t of authorizedTools) {
     if (!t.namespace || !bareChoiceNames.has(t.name) || bareNameCounts.get(t.name) !== 1 || declaredToolNames.has(t.name)) continue;
+    if (NAMESPACED_BARE_ALIAS_EXCLUDED_NAMES.has(t.name)) continue;
     budget?.chargeRetained(new TextEncoder().encode(t.name).byteLength, { kind: "retained_collectors" });
     declaredToolNames.add(t.name);
     budget?.chargeRetained(new TextEncoder().encode(JSON.stringify([t.name, t.namespace, t.name])).byteLength, { kind: "retained_collectors" });

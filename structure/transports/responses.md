@@ -76,6 +76,20 @@ the tool surface so request-local aliases remain available for response restorat
 item records which tool actually ran, so re-pointing it at a same-named namespace child would
 rewrite that record on a coincidence rather than translate it.
 
+A namespaced tool is registered under every coordinate a provider might echo — `ns__name`, the
+dotted `ns.name`, and the bare `name` — but six spellings never get the bare one:
+`exec`, `exec_command`, `shell_command`, `write_stdin`, `apply_patch`, `view_image`
+(`NAMESPACED_BARE_ALIAS_EXCLUDED_NAMES`). A declared-name set is what decides nested-helper
+normalization, so bare `exec` from a namespace turns it on for a catalog that never declared the
+shell, and `normalizeDeclaredToolName` then rewrites an undeclared `apply_patch` onto it. The
+fence is a property of the SPELLING, not of the declaring namespace and not of why the alias was
+being added — both drifted once, one to `collaboration` only and one to `exec` only, and each
+drift was a live authorization widening. Every site that builds a declared-name set reads the one
+list: `buildToolBridgeMaps` for the echo and `tool_choice` selector paths, and
+`collectDeclaredWireToolNames` for the passthrough catalog. A genuine namespace-free declaration
+is untouched: that is the caller declaring the tool, not a namespace being discarded to
+manufacture a bare name.
+
 Codex-private tool fields are removed at the same boundary from one table
 (`CANONICAL_ONLY_TOOL_FIELDS`) rather than one bespoke pass each: `external_web_access` on either
 web-search variant, and `defer_loading` on any declaration, which `activateDeferredTool` clears only
