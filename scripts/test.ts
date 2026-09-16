@@ -14,12 +14,18 @@ import {
   recoverStaleTestTempArtifactsOnce,
   removeTestTempTree,
   writeTestTempOwner,
+  type RemoveTreeOptions,
 } from "./test-temp";
 
 export interface IsolatedTestEnvironment {
   root: string;
   env: Record<string, string | undefined>;
-  cleanup(): void;
+  /**
+   * Remove this root. The caller chooses the removal budget because the two callers pay for it
+   * differently: a foreground teardown can afford the default long tail, while a process `exit`
+   * listener runs synchronously and there is one per test file (`tests/preload.ts`).
+   */
+  cleanup(options?: RemoveTreeOptions): void;
 }
 
 export function createIsolatedTestEnvironment(
@@ -82,8 +88,8 @@ export function createIsolatedTestEnvironment(
       TMP: containedTemp,
       TMPDIR: containedTemp,
     },
-    cleanup() {
-      removeTestTempTree(root);
+    cleanup(options) {
+      removeTestTempTree(root, options);
     },
   };
 }
