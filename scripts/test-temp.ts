@@ -51,7 +51,7 @@ export interface TestTempRecoveryResult {
   truncated: boolean;
 }
 
-export type RemoveTreeOptions = Readonly<{
+type RemoveTreeOptions = Readonly<{
   budgetMs?: number;
   delays?: readonly number[];
   remove?: (path: string) => void;

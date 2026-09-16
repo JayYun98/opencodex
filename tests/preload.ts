@@ -25,33 +25,8 @@
  * `launchctl bootout gui/<uid>/com.opencodex.proxy` reaches launchd — so neither cares
  * what HOME says. `assertLiveServiceManagerAllowed` in `src/service.ts` is the guard for
  * that, armed by the same flag set below.
- *
- * NOTHING IN THIS FILE'S IMPORT GRAPH MAY IMPORT `bun:test`.
- *
- * Bun re-loads this preload for EVERY test file: `--isolate` gives each file its own realm,
- * and `VirtualMachine::reload_entry_point_for_test_runner` calls `load_preloads` again each
- * time. Adding `import { afterAll } from "bun:test"` here (#4796, dc9d1fabc8) put a runtime
- * built-in into that repeatedly re-entered graph, and on the 67th re-load Bun dereferenced a
- * dead JSPromise inside its module loader and took SIGSEGV:
- *
- *   panic(main thread): Segmentation fault at address 0x10
- *     WTF::CompactPointerTuple<JSC::JSCell *,unsigned short>::type
- *     JSC::JSPromise::status  <- null cell
- *     JSC::JSPromise::performPromiseThenWithInternalMicrotask
- *     JSC::JSModuleLoader::loadModule
- *     JSC::moduleLoadTopSettled
- *     bun_runtime::jsc_hooks::load_preloads          <- THIS FILE
- *     bun_jsc::virtual_machine::VirtualMachine::reload_entry_point_for_test_runner
- *
- * Windows shard 5/6 of dispatch runs 35087572377 and 35093667426 crashed there on both
- * attempts, always at the file boundary and never inside a test; Linux shards took the same
- * fault as exit 139 at five unrelated batch boundaries. Every file involved passes when it is
- * the only file in its process — one preload load cannot reach the second re-load that faults.
- * The immediately preceding dispatch run, 35054231781 at 8a1b01011d, ran the same files in the
- * same order with no `bun:test` edge here and was green.
- *
- * `tests/ci-workflows/test-preload-module-graph.test.ts` is the guard that keeps the edge out.
  */
+import { afterAll } from "bun:test";
 import { isTestHomeGuardArmed, protectedHomeForTests } from "../src/lib/test-home-guard";
 import { createIsolatedTestEnvironment } from "../scripts/test";
 import {
@@ -141,26 +116,17 @@ if (process.platform === "win32" && lockPath && runLock.owner) {
 }
 
 // Clean up only the root this preload created. The `bun run test` wrapper owns its own.
-//
-// A process `exit` listener, and deliberately not a `bun:test` lifecycle hook — reaching for
-// `afterAll` is what crashed the runtime, for the reason recorded above the import list.
-//
-// Because the preload is re-loaded per test file, each file registers a listener for the root
-// it created, and they all fire at process exit. A listener runs synchronously, so this pass
-// takes a short removal budget rather than the 15s `removeTestTempTree` spends on a foreground
-// teardown: a Windows shard holds ~219 of these, and a contended exit paying the full budget
-// each would outlive the job timeout it is supposed to finish inside. Roots this pass cannot
-// release are not lost — `recoverStaleTestTempArtifactsOnce` reclaims owned roots on a later
-// run, and that half of #4796 does not depend on any handler firing.
-const EXIT_CLEANUP_BUDGET_MS = 250;
+// Bun test workers do not reliably run process `exit` handlers, so the test lifecycle hook
+// is primary; the process hook remains a best-effort fallback for setup failures.
 let cleanupComplete = false;
 const cleanupIsolatedRoot = () => {
   if (cleanupComplete) return;
   try {
-    isolated.cleanup({ budgetMs: EXIT_CLEANUP_BUDGET_MS });
+    isolated.cleanup();
     cleanupComplete = true;
   } catch {
     // The wrapper contains this root, and a later bare run reclaims it after the grace period.
   }
 };
+afterAll(cleanupIsolatedRoot);
 process.on("exit", cleanupIsolatedRoot);
