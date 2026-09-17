@@ -54,3 +54,24 @@ or explicitly authorize a bounded workload-measurement run, then select the
 permanent outer bound from completion duration and measured variation. That is
 a CI-policy decision requiring the repository's security review, not a timeout
 adjustment to slip into these release fixes.
+
+## Authorized bounded measurement
+
+The release owner explicitly authorized one measurement from current dev
+61ee64747bedc5fafbeb5fc811898ea4db4ec738, after #4948 landed.
+Throwaway branch: `codex/lane-g-2590-control-measurement`.
+Measurement head: 118e82d514bfcba81c8a357b8d909b540160b97e.
+Run: [35281782986](https://github.com/lidge-jun/opencodex/actions/runs/35281782986),
+dispatched with `lane=macos-control`.
+
+Its entire diff is one value: the macos-control job's outer timeout changes
+from 30 to 60 minutes. Commands, tests, per-test limits, isolation, actions,
+permissions and other jobs are unchanged. The branch has no PR and must never
+be merged. This is a measurement, not a fix; 60 minutes is not proposed as the
+repository's permanent budget.
+
+The requested result is the duration of a complete zero-failure control run.
+If the run fails, hangs or reaches the measurement bound, that result cannot
+be presented as a clean completion time. Once complete evidence exists, the
+recommendation will state measured duration plus explicit headroom; the owner
+retains the permanent workflow decision.

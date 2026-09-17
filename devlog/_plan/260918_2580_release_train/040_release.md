@@ -10,12 +10,33 @@ propagation is tracked at the end.
 | --- | --- | --- |
 | Land the native control stack | Five layers replayed onto `dev` one at a time, each verified before its push | #4782 → `519db59b31`, #4858 → `3ec1af6209`, #4861 → `fa26404d7b`, #4911 (= #4864 head `77c65e1a99`) → `f671934f02`, #4912 (= #4868 head `5c79b218a6`) → `5061f2c956` |
 | Freeze the candidate | `dev` tip `5061f2c956`, `package.json` 2.58.0 | — |
-| Full-platform regression | `ci.yml` dispatched with `lane=all` | Run `35247708168`: all nine Windows shards, all four Linux shards, `gates`, `docs site build`, keyring and npm-global on all three platforms, `storage policy`, `api usage`, `docker smoke` green. macOS capacity cancellations were the only non-green entries. |
+| Full-platform regression | `ci.yml` dispatched with `lane=all` | Run `35247708168`: all nine Windows shards, all four Linux shards, `gates`, `docs site build`, keyring and npm-global on all three platforms, `storage policy`, `api usage`, `docker smoke` green. The macOS attempts were not fully green: the control logged real test failures before cancellation, and attempt 2's shard 2 stopped producing results for 17m33s before its job timeout. The former characterization as capacity cancellations is withdrawn; see the correction below. |
 | Move `dev`'s version line | `dev-version-bump.yml` run `35253998264` opened #4916, merged as `4655d32f88` | `dev` now 2.59.0, which is what `release.yml` requires before it will publish 2.58.0 |
 | Promote to `main` | #4915 merged as `6fe4cd0de8` | Merge commit from the frozen candidate; tree identical to `5061f2c956`. `enforce-target` red by design, as for #4829 and #4694. |
-| Prove the release SHA | `Cross-platform CI` push run on `main` at `6fe4cd0de8` | Green after one re-run for a cancelled macOS shard. `release.yml` refuses to publish without this, and its first dispatch (`35254221472`) failed exactly there. |
+| Prove the release SHA | `Cross-platform CI` push run on `main` at `6fe4cd0de8` | Run `35254182109` became green on attempt 2. Attempt 1's macOS shard 2 had run thousands of tests, then remained silent for 17m19s until its job timeout; it was not an unstarted capacity cancellation. The later success does not diagnose that earlier hang. `release.yml` refused the first release dispatch (`35254221472`) before this green evidence existed. |
 | Publish | `release.yml` run `35257765967`, version 2.58.0, tag `latest`, dry-run false, `expected-sha=6fe4cd0de85d63b8cdd0c3552e5e8883c0a029ee` | `validate-dispatch` and `publish` both success. Publish step ends `+ @bitkyc08/opencodex@2.58.0`; provenance in the sigstore transparency log at logIndex 2879474742. GitHub release `v2.58.0` created 17:40:35Z, tag points at `6fe4cd0de8`. |
 | Promote to `preview` | #4917 merged as `48e1ddba0b` | `git diff origin/main HEAD` empty; no version-line conflict this time |
+
+## Correction of macOS cancellation characterization (2026-09-18)
+
+The release and successful second main-CI attempt remain historical facts.
+The earlier benign explanation of all macOS non-green entries does not.
+Every cancelled macOS job below acquired a runner, completed setup/build and
+entered the Test step. None was a queued or step-less capacity cancellation.
+
+| Run / attempt | Job | Evidence and corrected disposition |
+| --- | --- | --- |
+| `35247708168` / 1, candidate `5061f2c956` | [control 105292607489](https://github.com/lidge-jun/opencodex/actions/runs/35247708168/job/105292607489) | 20,852 PASS lines and one FAIL line before cancellation. The storage trash restore responsiveness case failed with ECONNRESET. Active progress continued until the 30-minute job bound. |
+| `35247708168` / 2, same candidate | [control 105303640607](https://github.com/lidge-jun/opencodex/actions/runs/35247708168/job/105303640607) | 19,021 PASS lines and one FAIL line. Retained-sync/convergence expected committed but received stale. Cancelled while progressing before its ceiling; the cancellation actor/reason is not established. |
+| `35247708168` / 2, same candidate | [macos 2/2 105303640713](https://github.com/lidge-jun/opencodex/actions/runs/35247708168/job/105303640713) | 2,514 PASS lines, no printed failure, then 17m32.932s without test output after catalog-picker tests until the 20-minute job bound. An executing test process hung. |
+| `35254182109` / 1, main `6fe4cd0de8` | [macos 2/2 105313855869](https://github.com/lidge-jun/opencodex/actions/runs/35254182109/job/105313855869) | 2,512 PASS lines, no printed failure, then 17m19.098s of silence after full-picker ordering until the 20-minute job bound. This is the same broad hang signature, not proof of a shared internal cause. |
+
+These counts describe the available prefix of cancelled logs, not completed
+suite totals. Main run `35254182109` attempt 2 subsequently completed both macOS
+shards successfully; push conditions did not request the control. That success
+is not a root-cause disposition for the earlier silent hangs or control failures.
+The 2.59 investigation records the comparison in
+`devlog/_plan/260918_2590_release_train/100_macos_cancellation_rca.md`.
 
 ## Three things worth recording
 
@@ -69,4 +90,3 @@ republishing. Reads from this machine still returned `E404` for 2.58.0 and `late
 2.57.0 several minutes after the publish, which is the same behaviour 2.57.0 showed. **Do not
 republish.** The publish is acknowledged with provenance; inspect the registry before announcing
 availability.
-
