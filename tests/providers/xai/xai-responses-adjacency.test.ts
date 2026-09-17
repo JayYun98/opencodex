@@ -150,20 +150,27 @@ describe("xAI Responses tool-result adjacency", () => {
     expect(JSON.stringify(body)).not.toContain("no tool result was recorded");
   });
 
-  test("a dangling custom_tool_call is paired before it is lowered for the upstream", () => {
-    // xAI rejects the native custom-tool shape, so the repair has to happen before
-    // rewriteRoutedCustomToolsForUpstream converts the call; otherwise the lowering would carry a
-    // call with nothing to pair against.
+  test("a dangling custom_tool_call reaches xAI as a paired, lowered function call", () => {
+    // The pairing repair runs before rewriteRoutedCustomToolsForUpstream, so a custom call
+    // interrupted mid-stream is answered first and the pair is lowered together. xAI rejects the
+    // native custom shape (supportsResponsesCustomTools: false on the registry entry), which is
+    // what makes the lowering run at all, so the production shape is what this pins.
     const provider = xaiOauthResponses({
       requiresAdjacentResponsesToolResults: true,
       requiresPairedResponsesToolResults: true,
+      supportsResponsesCustomTools: false,
     });
     const call = { type: "custom_tool_call", call_id: "call_custom", name: "apply_patch", input: "patch" };
     const next = { type: "message", role: "user", content: [{ type: "input_text", text: "continue" }] };
-    const body = buildBody(provider, { input: [call, next] });
+    const body = buildBody(provider, {
+      tools: [{ type: "custom", name: "apply_patch", description: "Apply a patch." }],
+      input: [call, next],
+    });
     const input = body.input as Array<Record<string, unknown>>;
 
-    expect(input[1]).toMatchObject({ call_id: "call_custom" });
+    expect(input[0]).toMatchObject({ type: "function_call", call_id: "call_custom", name: "apply_patch" });
+    expect(input[1]).toMatchObject({ type: "function_call_output", call_id: "call_custom" });
     expect(String(input[1].output)).toContain("no tool result was recorded");
+    expect(input[2]).toMatchObject({ type: "message", role: "user" });
   });
 });
