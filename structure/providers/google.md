@@ -13,6 +13,13 @@ to their tool calls independently; they never become Anthropic thinking signatur
 
 > Decision record: [ADR-0055](../decisions/ADR-0055-google-thought-text-visibility-boundary.md)
 
+## Cloud Code Assist billing-prefix sanitation
+
+Before constructing a Cloud Code Assist `systemInstruction`, `src/adapters/google.ts` removes one
+Claude Code internal `x-anthropic-billing-header` line only when it is the prompt's first line.
+Other Google wires keep the text unchanged. The match is not multiline: an intermediate or quoted
+mention remains model-visible, and a prompt without the prefix keeps its leading whitespace.
+
 ## Google response-part field boundary
 
 Google-family adapters validate the values inside an otherwise well-formed response part before

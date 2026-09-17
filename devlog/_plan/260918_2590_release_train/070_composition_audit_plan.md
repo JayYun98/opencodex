@@ -3,10 +3,17 @@
 Date: 2026-09-18. Lane G owns this audit record and any focused repair proposed
 from it. Integration and release decisions remain with the release host.
 
-The audited dev commit is `3dddc1ec2b1315311ca240ad2a3dbd10222e2c67`.
+The audited dev commit is `a0f611d4aceb9476d44268e43722273b7b211846`.
 The branch is `codex/lane-g-2590-release-audit`. The primary round is
-`4655d32f88^..3dddc1ec2b`, with earlier Responses and combo merges included
+`4655d32f88^..a0f611d4ac`, with earlier Responses and combo merges included
 where they supply a composition dependency.
+
+The initial pin was `3dddc1ec2b1315311ca240ad2a3dbd10222e2c67`; the host
+extended it by the one intervening commit, #4526. Its lazy Unicode schema
+normalization and five hand-resolved structure documents are explicit targets.
+The #4925 transient retry import resolution is another explicit target.
+An exact detached worktree supplies the new source view; the documentation
+branch is not merged or rebased, as the lane forbids both operations.
 
 ## Method and limits
 
@@ -15,7 +22,7 @@ No local test, focused suite, typecheck, build, dependency installation,
 repository runtime or proxy binary is permitted. No timeout, budget, retry,
 platform selection or CI gate may be relaxed to obtain success.
 
-The audit uses six independent Sol/medium subagent requests on the V1 surface:
+The audit uses seven independent Sol/medium subagent requests on the V1 surface:
 
 1. Upstream Codex source and recent PR contracts.
 2. File-size ratchet, both test-layout registries and colliding paths.
@@ -23,6 +30,7 @@ The audit uses six independent Sol/medium subagent requests on the V1 surface:
 4. Responses retry/steering composition, Lab isolation and synchronous startup.
 5. Codex account identity, affinity and OAuth composition.
 6. Exhaustive maps, client rosters and reauthorization composition.
+7. Usage pricing, Cursor/Google changes, web-search replay and Devin limits.
 
 The lane owner handles authenticated Aside observations, exact-SHA hosted CI,
 finding adjudication and publication. Workers are read-only; any verified repair

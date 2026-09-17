@@ -123,7 +123,7 @@ only a typed DNS-resolution failure degrades to proxy resolution; every literal,
 resolved-address policy error still rejects. Proxy mode logs once that the proxy-selected peer
 cannot be pinned. Private destinations additionally require allowPrivateNetwork plus NO_PROXY.
 
-Two fake-IP DNS accommodations exist, both for resolved answers only (a literal address in the URL
+Outbound requests have two fake-IP DNS accommodations, both for resolved answers only (a literal address in the URL
 still rejects). The IANA benchmark range (198.18/15 and its IPv4-mapped IPv6 spellings) is admitted
 whenever any outbound proxy applies to the host, because the range itself marks the answer synthetic.
 Mihomo's default IPv6 fake-IP range (fdfe:dcba:9876::/48) is ULA and carries no such mark, so it is
@@ -133,6 +133,11 @@ not in NO_PROXY, and the request is then bound to that proxy through Bun's expli
 rather than environment inference. Both gates live in the outbound wrapper, not in classification:
 `classifyIpv6` and config-time validation (`providerDestinationResolvedError`) never admit the
 ULA, so provider save-time checks are unaffected (#3462).
+
+Provider save-time validation has one narrower benchmark-range exception. The canonical
+`google-antigravity` row may resolve to 198.18/15 only while its adapter, OAuth mode, and normalized
+base URL still match the registry seed. A custom Antigravity endpoint, a literal benchmark address,
+or a mixed benchmark plus private/metadata answer keeps the ordinary fail-closed destination policy.
 
 Both paths reject redirects and expose only credential-stripped final-address guidance. This phase
 does not cover ordinary requests, streaming, retries, or per-hop redirect review on those paths.

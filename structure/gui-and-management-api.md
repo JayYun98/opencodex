@@ -293,6 +293,11 @@ recovery; operators no longer need to delete `update-job.json` after a dead work
 The dashboard is a local control surface, not a separate service. It should reflect the same config
 and catalog invariants documented in this folder rather than inventing parallel state.
 
+`src/server/gui-static.ts` keeps bootstrap state out of persistent caches: HTML responses use
+`Cache-Control: no-store`. A non-HTML file receives one-year `immutable` caching only when it is
+inside Vite's `assets/` directory and its basename carries the expected content hash. Unhashed
+assets, icons, and other static files use `no-cache` so clients revalidate them after replacement.
+
 Codex quota cards consume the display cache from `src/codex/quota.ts`. A partial refresh
 removes an omitted short tuple whose reset deadline has elapsed, so a stale model-derived
 5h row does not persist on a weekly-only account. This is independent of the main-account
@@ -526,6 +531,14 @@ eligible. Missing trace evidence is not reconstructed from today's configuration
 model shares use that provider's token total, not the global total. Unknown reserved `policy/`
 selectors are rejected before upstream dispatch; historical rows remain unchanged.
 Expected-price overlays are estimates, not billing reproductions: the Z.AI GLM rows (`zai`, `zhipu-bigmodel`, `zhipu-bigmodel-coding`, `zhipu-bigmodel-responses`) display the published z.ai USD list price on surfaces that actually bill by Coding Plan subscription or CNY-tiered domestic PAYG, and every such row is marked `verified-derived` so the estimate flag reaches the UI.
+
+The Usage model and provider breakdowns expose API list-price estimates with explicit pricing
+coverage. `estimatedCostUsd` is rendered when available, including a measured zero; `pricedRequests`
+and `unpricedRequests` distinguish covered rows from requests excluded for missing price or usable
+usage data. A response from an older proxy that carries none of those fields remains unavailable
+rather than looking free. The five OpenCode Go overlays (`qwen3.8-max`, `qwen3.8-flash`,
+`deepseek-v4.1-flash`, `glm-5.3-flash`, `muse-spark-1.3-contributor`) apply their vendors' published
+list prices as `verified-derived` estimates because the OpenCode Go surface itself is subscription-billed.
 
 The management API retains the compact accumulator plus bounded query summaries; it never retains
 normalized per-request rows after a response. File identity changes, shrinkage, same-size metadata
