@@ -13,6 +13,34 @@ The final release table must refer to that new SHA and its fresh full dispatch.
 | [35277467396](https://github.com/lidge-jun/opencodex/actions/runs/35277467396) | workflow_dispatch, lane=all | 317b0858f552914a52a83979ebdc1bafdfb3865c | Corroboration only; one audit-doc commit over the older 3dddc1ec2b source tree |
 | [35276608167](https://github.com/lidge-jun/opencodex/actions/runs/35276608167) | push | 3dddc1ec2b1315311ca240ad2a3dbd10222e2c67 | Superseded and cancelled; not complete release evidence |
 
+## Completed table for the held candidate
+
+Run 35277719805 completed with conclusion **failure** at exact
+a0f611d4aceb9476d44268e43722273b7b211846.
+
+| Requested proof | Final result |
+| --- | --- |
+| Linux test 1/4, 2/4, 3/4, 4/4 | All four success |
+| Windows 1/9, 2/9, 3/9, 4/9, 5/9, 6/9, 7/9, 8/9, 9/9 | All nine success |
+| macOS shard 1/2 | Cancelled after a long silent interval; not passed |
+| macOS shard 2/2 | Success |
+| macOS unsharded control | Cancelled at the 30-minute bound while still progressing; not passed |
+| Keyring: Ubuntu, Windows, macOS | All success |
+| npm-global: Ubuntu, Windows, macOS | All success |
+| Gates, API usage, storage policy, Docker, docs build | All success |
+| Changes and Windows runner selection | Both success |
+| Aggregate ci | Failure |
+
+The exact-candidate control completed 19,098 passing test results and printed
+no failing assertion before cancellation. Its last PASS was at 22:12:39.127915Z,
+about two seconds before cancellation at 22:12:41.170363Z, which supports the
+continuous-work classification. Its reported test durations total 1,391,363 ms.
+The separate silent shard hang is not explained by that workload result.
+
+The final release table will replace neither these facts nor their disposition.
+It must name the post-fix merged SHA and a fresh full workflow run selected by
+the release host. That SHA has not yet been frozen in this audit record.
+
 ## The coverage gap
 
 The normal push workflow omits the entire Windows suite and the unsharded
