@@ -46,6 +46,9 @@ export class CursorStreamTruncatedError extends Error {
   }
 }
 
+export const CURSOR_INCOMPLETE_TOOL_CALL_MESSAGE_PREFIX =
+  "Cursor stream ended with incomplete tool call(s):";
+
 /**
  * True when Cursor ended the stream with a client tool still open. The adapter fail-closes
  * the current turn (no partial `tool_call_start`) and remints the conversation afterwards
@@ -54,7 +57,8 @@ export class CursorStreamTruncatedError extends Error {
 export function isCursorIncompleteToolCallMessage(value: unknown): boolean {
   const message = typeof value === "string" ? value : errorMessage(value);
   const lower = message.toLowerCase();
-  return lower.includes("incomplete tool call") || lower.includes("tool call(s) left incomplete");
+  return lower.includes(CURSOR_INCOMPLETE_TOOL_CALL_MESSAGE_PREFIX.toLowerCase())
+    || lower.includes("tool call(s) left incomplete");
 }
 
 /**

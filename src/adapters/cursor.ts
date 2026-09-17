@@ -32,8 +32,11 @@ import { isDebugEnabled } from "../lib/debug-settings";
 import { createAdapterTierMetadata } from "../providers/fastwire";
 import { estimateTokens } from "../lib/token-estimate";
 import {
+  clearCursorIncompleteToolRemint,
+  cursorIncompleteToolRemintScopeKey,
   cursorOverflowRemintScopeKey,
   markCursorOverflowSurfaced,
+  recordCursorIncompleteToolRemint,
   recordCursorOverflowRemint,
   rememberCursorThreadConversation,
   shouldSkipCursorOverflowRemint,
@@ -533,15 +536,33 @@ export function createCursorAdapter(provider: OcxProviderConfig, deps: CursorAda
             }
           }
         }
-        // Incomplete-tool errors are streamed, not thrown. Do not retry this turn; remint so
-        // the next request does not reuse a Cursor conversation left waiting for mcpResult.
-        if (sawIncompleteToolCall && _parsed._cursorIsolateConversation !== true) {
-          if (inheritedCheckpointRef) invalidateCursorCheckpoint(inheritedCheckpointRef);
-          debugProviderDiagnostic("cursor", "incomplete-tool-remint", {
-            wireModel: request.modelId,
-            conversationHash: request.conversationId.slice(0, 16),
-          });
-          remintConversationId(request.conversationId);
+        const incompleteToolRemintScopeKey =
+          _parsed._cursorIsolateConversation !== true
+          && request.contextUsageStoreCheckpoints !== false
+            ? cursorIncompleteToolRemintScopeKey(
+                cursorClientThreadOwner(_parsed),
+                _parsed._cursorIdentityScope,
+              )
+            : null;
+        // Incomplete-tool errors are streamed, not thrown. Do not retry this turn; rotate only
+        // the next turn's id. request-prepare currently isolates compaction, but adapter callers
+        // can bypass that upstream invariant, so checkpoint storage is the local isolation boundary.
+        if (sawIncompleteToolCall && incompleteToolRemintScopeKey) {
+          if (recordCursorIncompleteToolRemint(incompleteToolRemintScopeKey)) {
+            if (inheritedCheckpointRef) invalidateCursorCheckpoint(inheritedCheckpointRef);
+            debugProviderDiagnostic("cursor", "incomplete-tool-remint", {
+              wireModel: request.modelId,
+              conversationHash: request.conversationId.slice(0, 16),
+            });
+            remintConversationId(request.conversationId);
+          } else {
+            debugProviderDiagnostic("cursor", "incomplete-tool-remint-exhausted", {
+              wireModel: request.modelId,
+              conversationHash: request.conversationId.slice(0, 16),
+            });
+          }
+        } else if (!sawIncompleteToolCall && completedNormally && incompleteToolRemintScopeKey) {
+          clearCursorIncompleteToolRemint(incompleteToolRemintScopeKey);
         }
         if (
           request.checkpointInvalidationReason

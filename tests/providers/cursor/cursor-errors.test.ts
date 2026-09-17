@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
   classifyCursorError,
+  CURSOR_INCOMPLETE_TOOL_CALL_MESSAGE_PREFIX,
   isCursorBenignCancelError,
   isCursorIncompleteToolCallMessage,
   isCursorInvalidArgumentError,
@@ -11,6 +12,7 @@ import {
   recordObservedCursorContextWindow,
   resetObservedCursorContextWindowsForTests,
 } from "../../../src/adapters/cursor/discovery";
+import { createCursorProtobufEventState, finalizeTurnEvents } from "../../../src/adapters/cursor/protobuf-events";
 import { inferHttpStatusFromAdapterMessage } from "../../../src/lib/errors";
 
 describe("classifyCursorError", () => {
@@ -234,6 +236,18 @@ describe("bare resource_exhausted size prior (devlog 260)", () => {
 });
 
 describe("isCursorIncompleteToolCallMessage", () => {
+  test("matches the message produced by finalizeTurnEvents", () => {
+    const state = createCursorProtobufEventState();
+    state.openToolCalls.set("call_from_producer", { name: "read_file", args: "" });
+
+    const [event] = finalizeTurnEvents(state);
+
+    expect(event?.type).toBe("error");
+    if (event?.type !== "error") throw new Error("incomplete tool call must finalize as an error");
+    expect(event.message.startsWith(CURSOR_INCOMPLETE_TOOL_CALL_MESSAGE_PREFIX)).toBe(true);
+    expect(isCursorIncompleteToolCallMessage(event.message)).toBe(true);
+  });
+
   test("matches streamed incomplete-tool errors and the unused truncation class", () => {
     expect(isCursorIncompleteToolCallMessage(
       "Cursor stream ended with incomplete tool call(s): call_abc. Arguments may be truncated; the call was not committed.",
