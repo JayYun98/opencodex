@@ -80,6 +80,20 @@ the newly frozen merged SHA needs its own full dispatch.
 | Configured send cap/recovery reserve composition | [#4947](https://github.com/lidge-jun/opencodex/pull/4947) | Exact-head PR CI, paired budget tests and one-send original-response regression |
 | Cold status fixture setup | [#4948](https://github.com/lidge-jun/opencodex/pull/4948) | PR CI plus [full dispatch 35279223062](https://github.com/lidge-jun/opencodex/actions/runs/35279223062) at cca06b1693fc4f7d4711bb920ea5f5417655edf5 |
 
+The host merged #4948 as 61ee64747bedc5fafbeb5fc811898ea4db4ec738 under
+the explicit scoped integration exception recorded on that PR. This is not a
+claim that its unrelated macOS failure disappeared.
+
+At the audit handoff, #4945 remains at fd2f1cd03d6d99f2d27280ee12aed9a40a4b572e:
+all requested jobs except macOS shard 2 succeeded, and that shard was cancelled
+after the silent catalog-runner interval documented in the RCA. #4947 remains at
+50ecf0627347343a6eaa0c9f55aee25a6a906b13: Linux, gates and its new send-cap
+assertions passed, but macOS shard 2 reproduced the separately assigned combo
+connect-cancellation hook timeout at 30,050.44 ms (job 105398860800;
+12,810 pass / 12 skip / 1 fail). Its shard 1 result was still pending at handoff.
+Neither PR is marked ready under an assertion that its exact head is fully green.
+The host owns the remaining macOS investigation and integration disposition.
+
 The first #4947 run failed only its new absent-recovery-label expectation:
 the existing request-attempt initializer creates an empty array, not an absent
 field. The one-send and original-400-body assertions passed. The expectation
@@ -158,3 +172,9 @@ approval is recorded until they are integrated and every requested job, includin
 all nine Windows shards, succeeds on the host's newly frozen merged SHA. Final
 results and the audit verdict will replace this pending statement after that
 hosted evidence is available.
+
+The source audit and historical correction are complete within their stated
+limits. The dedicated macOS lane owns the unresolved hang cause. One narrowly
+authorized control-duration measurement is pending at run 35281782986; see
+`110_macos_control_disposition.md`. Its terminal result will be recorded as a
+follow-up, without retrying or treating a measurement timeout change as a fix.
