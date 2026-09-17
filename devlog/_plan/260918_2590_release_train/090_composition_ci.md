@@ -73,6 +73,20 @@ established. The correction makes one cold setup explicit and bounded before
 all sixteen unchanged 15-second projection assertions. New-code hosted timing
 evidence must show this setup and the individual measured children separately.
 
+Changed-code Windows 7/9 job 105397453194 in run 35279223062 completed
+successfully at exact head cca06b1693fc4f7d4711bb920ea5f5417655edf5.
+Its setup took 1,755 ms; all sixteen measured children took 583–933 ms and
+every original row passed. This verifies the explicit setup/measurement path;
+it does not claim that the original 15.6-second cold environment was reproduced.
+
+The earlier corroborating run's macOS control, job 105391505883, was cancelled
+at its 30-minute bound. The captured log contains 18,576 completed tests and
+zero failing tests before cancellation, with reported test durations totaling
+1,382,730 ms. It continued progressing through tests until cancellation, so
+the evidence shows incomplete total-work coverage rather than a demonstrated
+single stuck assertion. Its overall CI result is failure. No bound, isolation
+mode, test or platform was changed to conceal this result.
+
 The generation-bound denial issue is explicitly deferred to
 [#4952](https://github.com/lidge-jun/opencodex/issues/4952) as the next round's
 first item. The owner accepted its bounded avoidance behavior because
