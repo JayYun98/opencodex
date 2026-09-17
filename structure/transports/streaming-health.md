@@ -472,3 +472,30 @@ Codex App/CLI UI certification. The fixture suite also exercises real loopback s
 `tests/responses/ws-steering-completion.test.ts` and `ws-steering-smoke.test.ts`
 cover effective wire settings, immutable-route refusals, policy preservation,
 independent API credentials, unavailable-mode diagnostics and safe probe outcomes.
+
+## Protocol-gated HTTP stream recovery
+
+`src/server/responses/combo-stream-preflight.ts` returns native HTTP Responses headers without
+waiting for the first event, then inspects the stream when downstream consumption begins. A
+reset-shaped read rejection becomes eligible for one replacement only after the shared
+`createSseInspector` parser observed `response.created` and no committing payload.
+Any output-item event, delta, unknown event or terminal commits the original stream. A reset before
+`response.created` is also left on the original failure path. The gate therefore uses parsed
+protocol evidence gathered by the deferred body reader, rather than downstream byte-consumption
+timing. Upstream WebSocket responses bypass this wrapper so their response-attached quota, stage,
+and bounded-relay identity remains intact. A downstream WebSocket turn that falls back to HTTP
+also bypasses it: `response.created` must reach that client immediately so the response id remains
+addressable and steering or injection can be rejected explicitly.
+
+`src/server/responses/passthrough-dispatch.ts` spends at most one remaining request send, preserves
+the selected credential binding, records the physical send as `connection-reset`, and forces the
+replacement through HTTP so a sent WebSocket exchange is never repeated. Non-success, bodyless,
+locked, non-replayable or content-type-incompatible replacements are cancelled; the original
+bounded prefix and read error then reach the existing failed-tail path. Cancellation and exhausted
+send allowance suppress recovery. The replacement is not preflighted again, so a second reset
+cannot trigger another send. Native Chat remains outside this recovery because its protocol does
+not expose the required `response.created` evidence at the dispatch gate.
+
+This is a narrow reversal of the no-mid-stream-resend rule recorded in
+`devlog/_fin/260703_sse-midstream-reset-tail/00_plan.md`: the old rule remains for every stream
+without this positive protocol evidence and for every stream that has committed output.

@@ -147,3 +147,5 @@ This reduces avoidable allocations; it is not a hard heap cap or a guarantee of 
 Schema size still determines traversal work and the cost of copying a changed broad container.
 `tests/adapters/openai/openai-chat-hardening.test.ts` covers wide, deep and mixed-array schemas;
 `tests/responses/openai-responses-passthrough.test.ts` covers the existing wire contract.
+
+During [protocol-gated HTTP recovery](streaming-health.md#protocol-gated-http-stream-recovery), the deferred body preflight retains only its existing bounded prefix. Rejected replacement bodies are cancelled rather than accumulated.

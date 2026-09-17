@@ -168,3 +168,5 @@ Provider-scoped approval reviewer settings are projected by the [catalog owner](
 Shared response-log retention and native SSE inspection pacing follow the [bounded inspection contract](transports/byte-accounting.md#response-log-inspection); other subsystem behavior remains unchanged.
 
 Native steering generation overrides, explicit public-API eligibility and the consent-gated wire probe follow the [shared control contract](transports/streaming-health.md#steering-settings-public-api-and-diagnostic-probe); this owner does not change routing or execute diagnostic tools.
+
+Responses HTTP recovery retains the existing request boundary; see [protocol-gated stream recovery](transports/streaming-health.md#protocol-gated-http-stream-recovery) for its one-send, no-committed-output contract.
