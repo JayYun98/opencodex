@@ -79,6 +79,16 @@ Its setup took 1,755 ms; all sixteen measured children took 583–933 ms and
 every original row passed. This verifies the explicit setup/measurement path;
 it does not claim that the original 15.6-second cold environment was reproduced.
 
+All nine Windows shards and all four Linux shards subsequently completed
+successfully on that exact #4948 head, with gates green. Its separate PR run
+35279139497 reports a macOS shard-2 failure in the pre-existing combo
+connect-cancellation teardown hook (job 105396939652, 30,066.66 ms;
+12,807 pass / 12 skip / 1 fail). The branch changes only the CLI status fixture.
+The release owner assigned that hook failure to a separate investigation and
+authorized evaluating #4948 on its Windows/Linux proof rather than hiding or
+fixing the unrelated hang inside that PR. Pending macOS jobs remain pending;
+this is a scoped integration exception, not an all-platform green claim.
+
 The earlier corroborating run's macOS control, job 105391505883, was cancelled
 at its 30-minute bound. The captured log contains 18,576 completed tests and
 zero failing tests before cancellation, with reported test durations totaling
