@@ -87,6 +87,13 @@ the evidence shows incomplete total-work coverage rather than a demonstrated
 single stuck assertion. Its overall CI result is failure. No bound, isolation
 mode, test or platform was changed to conceal this result.
 
+The exact held candidate's macOS shard 1/2, job 105392401547 in run
+35277719805, was also cancelled after 20 minutes. Unlike the control's
+continuous progress, its last completed test was the real injection lock-contention
+case at 21:52:22Z, followed by silence until cancellation at 22:08:37Z.
+The cause of that silent interval requires separate root-cause analysis;
+the absence of a printed failing assertion does not establish success.
+
 The generation-bound denial issue is explicitly deferred to
 [#4952](https://github.com/lidge-jun/opencodex/issues/4952) as the next round's
 first item. The owner accepted its bounded avoidance behavior because
