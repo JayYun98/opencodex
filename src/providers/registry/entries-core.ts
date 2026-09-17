@@ -290,6 +290,9 @@ export const PROVIDER_REGISTRY_CORE: readonly ProviderRegistryEntry[] = [
     // statelessResponses: xAI stores responses for 30 days and documents previous_response_id.
     // https://docs.x.ai/developers/model-capabilities/text/comparison
     requiresAdjacentResponsesToolResults: true,
+    // The dangling half of the same failure: a call whose output never arrived. Kimi accepts that
+    // shape, so this is a second capability rather than a widening of the one above.
+    requiresPairedResponsesToolResults: true,
     // Vision lineup per docs.x.ai model-capabilities/images/understanding: the grok-4.x chat
     // models accept image input (JPEG/PNG, URL or base64). Without this the catalog leaves
     // inputModalities undefined, and deriveComboCatalogModel defaults an undefined member to

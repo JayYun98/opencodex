@@ -146,15 +146,27 @@ Responses endpoint enforces the same strict shape and rejects a hook-split pair 
 so `kimi` and `kimi-code` carry the flag as well. The flag is inert while those presets use the Chat
 wire and takes effect when a row is configured onto `openai-responses`, which is the configuration the
 report exercised. xAI Grok 4.6/4.5 subscription Responses carries the same flag: after a mid-stream
-interrupt, Codex can replay a `function_call` without its output, or with hook-injected developer
-context between the pair, and later turns 400. xAI's public Responses API is stateful (`store`
-defaults true; `previous_response_id` continues a stored conversation), so the provider is not marked
-`statelessResponses`. For a non-forward adjacency provider the existing orphan-call repair still
-synthesizes an honest placeholder output without stripping store. The adjacency pass itself still
-does not invent duplicate or backwards pairs. No upstream specification documents the adjacency
-requirement; the evidence is the observed
+interrupt, Codex can replay a `function_call` with hook-injected developer context between it and
+its output, and later turns 400. The adjacency pass itself still does not invent duplicate or
+backwards pairs. No upstream specification documents the adjacency requirement; the evidence is the observed
 400 and DeepSeek's identical failure shape, which is why this stays a per-provider capability rather
 than a wire-wide default — upstream Codex leaves an intervening developer message where it is.
+
+A mid-stream interrupt produces a second, different shape: a call whose output never arrived at all.
+That is `requiresPairedResponsesToolResults`, a separate capability, and the separation is the whole
+point. Adjacency reorders items the upstream would accept in some order; pairing synthesizes an item
+the client never sent, which puts a tool turn into the conversation that did not happen. The evidence
+differs too — #4726 shows Kimi accepting a call with no result at all, so `kimi` and `kimi-code` keep
+adjacency and do not receive placeholders. `xai` carries both. `statelessResponses` implies pairing,
+which is how DeepSeek already had it: an upstream that stores nothing cannot resolve the missing half
+from its own history either.
+
+xAI's public Responses API is stateful (`store` defaults true; `previous_response_id` continues a
+stored conversation), so the provider is not marked `statelessResponses`. The pairing repair
+synthesizes an honest unknown-status placeholder without touching `store` or
+`previous_response_id`: repairing an interrupted history must not cost the thread its server-side
+state. Forward auth suppresses the synthesis regardless of the flag, because the backend that holds
+the conversation can resolve the pair itself.
 
 > Decision record: [ADR-0052](../decisions/ADR-0052-reasoning-and-tool-result-compatibility.md)
 
