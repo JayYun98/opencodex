@@ -1286,6 +1286,7 @@
   "xai-client.test.ts": "images",
   "xai-oauth-retry.test.ts": "providers/xai",
   "xai-refresh-lock.test.ts": "providers/xai",
+  "xai-responses-adjacency.test.ts": "providers/xai",
   "xai-tool-schema.test.ts": "providers/xai",
   "xai-transport.test.ts": "providers/xai",
   "xai-video-client.test.ts": "videos",

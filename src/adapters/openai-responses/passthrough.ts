@@ -270,19 +270,27 @@ export function createResponsesPassthroughAdapter(provider: OcxProviderConfig): 
       // tier write so a force-fast/default decision can never mutate parsed._rawBody.
       outBody = applyTierDecisionToResponsesBody(outBody, parsed.options?.tierDecision);
       const stateless = provider.statelessResponses === true;
+      const adjacentToolResults = provider.requiresAdjacentResponsesToolResults === true;
       if (stateless) outBody = stripStatefulResponsesParams(outBody);
       // A replay miss can leave a function_call_output whose paired function_call sat
       // in the prefix that was never expanded. A stateless upstream cannot resolve the
       // pair from its own storage either, so it needs the same repair the forward
       // backend gets — dropping previous_response_id is not much use if the body that
       // reaches the wire is unparseable.
+      // Strict parsers that require adjacent call/result batches also 400 on a
+      // function_call with no matching output. DeepSeek gets that repair through
+      // statelessResponses. xAI cannot: its Responses API stores conversations for
+      // 30 days and documents previous_response_id. The adjacency capability is the
+      // existing strict tool-history gate, so non-forward adjacency providers
+      // reuse the orphan-call placeholder without stripping store.
       if (provider.annotateEmptyToolOutputs === true) {
         outBody = annotateEmptyResponsesToolOutputs(outBody, true);
       }
-      if (forward || stateless) {
-        outBody = repairOrphanedInputItems(outBody, unexpandedMiss, stateless && !forward);
+      const synthesizeMissingCallOutputs = !forward && (stateless || adjacentToolResults);
+      if (forward || stateless || adjacentToolResults) {
+        outBody = repairOrphanedInputItems(outBody, unexpandedMiss, synthesizeMissingCallOutputs);
       }
-      if (provider.requiresAdjacentResponsesToolResults === true) {
+      if (adjacentToolResults) {
         outBody = normalizeResponsesToolResultAdjacency(outBody);
       }
       if (forward) {

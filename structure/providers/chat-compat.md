@@ -145,7 +145,14 @@ That pass is gated by `requiresAdjacentResponsesToolResults`, not by provider na
 Responses endpoint enforces the same strict shape and rejects a hook-split pair with HTTP 400 (#4726),
 so `kimi` and `kimi-code` carry the flag as well. The flag is inert while those presets use the Chat
 wire and takes effect when a row is configured onto `openai-responses`, which is the configuration the
-report exercised. No upstream specification documents the requirement; the evidence is the observed
+report exercised. xAI Grok 4.6/4.5 subscription Responses carries the same flag: after a mid-stream
+interrupt, Codex can replay a `function_call` without its output, or with hook-injected developer
+context between the pair, and later turns 400. xAI's public Responses API is stateful (`store`
+defaults true; `previous_response_id` continues a stored conversation), so the provider is not marked
+`statelessResponses`. For a non-forward adjacency provider the existing orphan-call repair still
+synthesizes an honest placeholder output without stripping store. The adjacency pass itself still
+does not invent duplicate or backwards pairs. No upstream specification documents the adjacency
+requirement; the evidence is the observed
 400 and DeepSeek's identical failure shape, which is why this stays a per-provider capability rather
 than a wire-wide default — upstream Codex leaves an intervening developer message where it is.
 
