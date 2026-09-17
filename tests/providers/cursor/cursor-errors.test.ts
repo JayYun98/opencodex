@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import {
   classifyCursorError,
   isCursorBenignCancelError,
+  isCursorIncompleteToolCallMessage,
   isCursorInvalidArgumentError,
   safeCursorErrorMessage,
 } from "../../../src/adapters/cursor/cursor-errors";
@@ -229,5 +230,18 @@ describe("bare resource_exhausted size prior (devlog 260)", () => {
         contextWindow: inferCursorContextWindow("claude-4.6-sonnet", options),
       })).toBe("Cursor context limit exceeded");
     });
+  });
+});
+
+describe("isCursorIncompleteToolCallMessage", () => {
+  test("matches streamed incomplete-tool errors and the unused truncation class", () => {
+    expect(isCursorIncompleteToolCallMessage(
+      "Cursor stream ended with incomplete tool call(s): call_abc. Arguments may be truncated; the call was not committed.",
+    )).toBe(true);
+    expect(isCursorIncompleteToolCallMessage(
+      "Cursor stream ended without terminating the turn; 1 tool call(s) left incomplete (call_abc) after 3 frame(s).",
+    )).toBe(true);
+    expect(isCursorIncompleteToolCallMessage("Cursor rate limit exceeded")).toBe(false);
+    expect(isCursorIncompleteToolCallMessage(new Error("Cursor stream ended with incomplete tool call(s): x"))).toBe(true);
   });
 });
