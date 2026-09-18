@@ -75,3 +75,47 @@ If the run fails, hangs or reaches the measurement bound, that result cannot
 be presented as a clean completion time. Once complete evidence exists, the
 recommendation will state measured duration plus explicit headroom; the owner
 retains the permanent workflow decision.
+
+## Terminal measurement result: failed, not a clean sizing baseline
+
+The authorized measurement's control job
+[105405217666](https://github.com/lidge-jun/opencodex/actions/runs/35281782986/job/105405217666)
+completed with **failure**, exiting 1 before the 60-minute outer ceiling.
+The exact head remains 118e82d514bfcba81c8a357b8d909b540160b97e, based on
+61ee64747bedc5fafbeb5fc811898ea4db4ec738. All 42,368 lines of the downloaded
+job log were scanned, including every distinct failure and the final summary.
+
+| Measurement | Observed value |
+| --- | --- |
+| Job start/end | 2026-09-17 23:12:38Z to 2026-09-18 00:04:07Z |
+| Job duration | 51m29s |
+| Test-step start/end | 2026-09-17 23:13:17Z to 2026-09-18 00:03:56Z |
+| Test-step duration | 50m39s |
+| Bun-reported suite duration | 3034.18s, or 50m34.18s |
+| Final suite counts | 26,475 pass / 46 skip / 5 fail; 26,526 tests across 1,343 files |
+| Assertions | 383,039 |
+| Outcome | Full suite summary emitted; Test exited 1; control job failed |
+
+The five failures are distinct; repeated failure-summary lines are not counted
+twice:
+
+| Test | Evidence |
+| --- | --- |
+| GitHub Actions hardening: bounded jobs and immutable action references | tests/ci-workflows/ci-workflows.test.ts:121 expects control timeout 30, received 60; job log line 25769 |
+| Web-search retry wait longer than the stall budget | 6,233.05 ms elapsed, explicit 5,000 ms test timeout; log line 33960 |
+| OpenAI Chat image that cannot be dropped still counts toward budget | 60,323.51 ms elapsed, 60,000 ms test timeout; log line 42020 |
+| OpenAI Chat imageTierBias reaches the normalizer | 91,516.75 ms elapsed, 60,000 ms test timeout; log line 42025 |
+| OpenAI provider-option Pool/Direct/API ownership integration spine | 31,801.03 ms elapsed, 30,000 ms test timeout; log line 42041 |
+
+The first failure is measurement-induced, not a newly established product
+defect: changing only the job timeout conflicts with the existing exact-value
+assertion. That conflict was missed during measurement preflight. The other
+four are observed timeouts; this inspection does not establish their root causes.
+Even setting the measurement-induced failure aside would not make this run green.
+
+Therefore the requested **zero-failure completion duration was not obtained**.
+The 50m39s step duration is a failed-run observation, not a validated baseline
+for duration-plus-headroom sizing. No permanent budget or headroom is recommended
+from this run. The single measurement is not retried, its assertions are not
+changed, and the throwaway branch remains unmerged with no PR. The 60-minute
+ceiling remains measurement-only. The follow-up reports these results and stops.

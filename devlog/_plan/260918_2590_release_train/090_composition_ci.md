@@ -174,7 +174,20 @@ results and the audit verdict will replace this pending statement after that
 hosted evidence is available.
 
 The source audit and historical correction are complete within their stated
-limits. The dedicated macOS lane owns the unresolved hang cause. One narrowly
-authorized control-duration measurement is pending at run 35281782986; see
-`110_macos_control_disposition.md`. Its terminal result will be recorded as a
-follow-up, without retrying or treating a measurement timeout change as a fix.
+limits. The dedicated macOS lane owns the unresolved hang cause. The narrowly
+authorized control-duration measurement in run 35281782986 has finished with a
+failed control job; see `110_macos_control_disposition.md` for the complete result.
+
+At measurement head 118e82d514bfcba81c8a357b8d909b540160b97e, job
+105405217666 completed its Test step in 50m39s (Bun suite: 3034.18s), with
+26,475 pass / 46 skip / 5 fail across 1,343 files. One failure is caused by
+the one-line measurement conflicting with the unchanged assertion that the
+control job limit equals 30 minutes. Four further failures are web-search,
+image-normalization and provider-option integration timeouts. The job exited 1;
+it was not stopped by the 60-minute ceiling. This terminal control result does
+not assert that the workflow aggregate has finished.
+
+No zero-failure completion time was obtained, so no permanent budget or headroom
+is inferred. The throwaway measurement branch has no PR and is never merged;
+no workflow or test was rerun or changed to conceal its result. This measurement
+is not release-green evidence for its source base or any later merged candidate.
