@@ -119,6 +119,11 @@ still cover the rule, which is a judgement only review makes.
   through `tests/helpers/repo-root.ts`, never `import.meta.dir + "/.."`. Provider additions register
   their focused test in both the explicit layout map and its expected-map fixture.
   Enforced by `tests/test-layout.test.ts`.
+- **INV-START-01** — `ocx start` never answers a busy preferred port by starting on another one. It
+  identifies the holder first and stops either way: refused as a duplicate when an opencodex answers
+  there, reported as an unidentified holder otherwise. A configured `port: 0` still asks the OS for a
+  port, and an explicit `--port` still waits for its pin instead of hopping.
+  Enforced by `tests/cli/cli-dispatch.test.ts`.
 
 CI enumerates that domain layout through `scripts/ci/run-bun-test-batches.sh`. Its default general
 scope and 12-file/120-second process shape leave the dedicated Linux storage-policy and api-usage
@@ -178,3 +183,5 @@ Shared response-log retention and native SSE inspection pacing follow the [bound
 Native steering generation overrides, explicit public-API eligibility and the consent-gated wire probe follow the [shared control contract](transports/streaming-health.md#steering-settings-public-api-and-diagnostic-probe); this owner does not change routing or execute diagnostic tools.
 
 Responses HTTP recovery retains the existing request boundary; see [protocol-gated stream recovery](transports/streaming-health.md#protocol-gated-http-stream-recovery) for its one-send, no-committed-output contract.
+
+Dashboard Fast-row persistence and client refresh follow the [Fast selector rows setting contract](gui-and-management-api.md#fast-selector-rows-setting).

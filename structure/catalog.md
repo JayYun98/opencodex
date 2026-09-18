@@ -17,6 +17,9 @@ Shared parsing and streaming follow the [request-copy](transports/byte-accountin
 
 `src/codex/catalog/remote.ts` permits loopback HTTP only when Bun fetch has no effective HTTP proxy or a matching NO_PROXY bypass. Its local matcher follows [Bun fetch semantics](https://github.com/oven-sh/bun/blob/744846f844374847c902b5e7fd59b4342a51ef99/src/dotenv/env_loader.rs#L369), including non-empty lowercase-variable priority, ASCII whitespace, literal host/port comparison and bracket-preserving IPv6. It does not normalize URL-shaped bypass entries, paths, wildcard prefixes, trailing dots or Unicode whitespace, and leaves the broader WebSocket proxy grammar unchanged. It refuses before authentication headers and fetch with a content-free `insecure_http_refused` error. ALL_PROXY and HTTPS-only settings do not affect HTTP acquisition; HTTPS and existing redirect, size, validation and coordinated-installation contracts are preserved. `tests/codex-integration/catalog-remote-pull.test.ts` covers these routing and non-disclosure boundaries.
 
+Accounts added through the [Orca import](codex-home.md#orca-source-owned-account-import) remain
+validation-pending. Import alone supplies no entitlement evidence for the model catalog.
+
 ## Shared catalog
 
 `src/codex/catalog.ts` builds a shared Codex-shaped catalog for CLI, TUI, App, and SDK. It:
@@ -377,6 +380,17 @@ Ultra is always advertised in the catalog regardless of the `multi_agent_v2` tog
 controls only the multi-agent collab surface, not ultra visibility. The `nativeEffortClamp` function
 wire-clamps ultra/max to each model's real top rung (e.g. gpt-5.5 ultra → xhigh on the wire).
 
+For routed models, `modelSuppressSyntheticMax` is a catalog-only per-model setting. A true value
+prevents `src/codex/catalog/effort.ts` from adding a missing synthetic `max` and prevents
+`src/codex/catalog/build-entries.ts` from repairing that missing rung during observed-state merge.
+It never removes a provider-declared `max`, and `ultra` remains advertised. If the configured default
+names a suppressed missing `max`, the catalog selects the highest real rung below it. A degraded sync
+also preserves any `max` already recorded on disk: without persisted provenance OpenCodex cannot
+distinguish an older synthetic rung from a real provider rung, so only a later healthy provider rebuild
+can remove the former. Codex uses this same membership for the picker and explicit `spawn_agent`
+effort validation; an explicit `max` spawn can therefore fail client-side before proxy wire clamping,
+while retained `ultra` remains the supported harness path.
+
 `effortCap` and `subagentEffortCap` are hard ceilings applied on the V2 path
 (`src/server/effort-policy.ts`): they lower or preserve the requested effort rather than rejecting
 the request, and they never raise it.
@@ -410,7 +424,7 @@ spelling; the V1 and compaction cap exemptions are preserved.
 
 > Decision record: [ADR-0026](decisions/ADR-0026-ultra-reasoning-level.md)
 
-Codex display-cache expiry, retained main-policy evidence, and reset history follow the
+Codex display-cache expiry, retained blocking main-policy evidence, and reset history follow the
 [quota cache contract](providers/openai-tiers.md#quota-cache-and-short-window-history).
 
 Usage consumers preserve positive incomplete-history metadata as specified in [usage accounting](gui-and-management-api.md#usage-accounting); readable totals are not represented as a complete ledger. Upstream API-key usage follows the [physical-attempt account attribution contract](gui-and-management-api.md#upstream-key-account-attribution), independently of subscription quota observations.
@@ -471,3 +485,5 @@ Native steering retains fixed phase deadlines and reconciled replay output; see 
 Native steering generation overrides, explicit public-API eligibility and the consent-gated wire probe follow the [shared control contract](transports/streaming-health.md#steering-settings-public-api-and-diagnostic-probe); this owner does not change routing or execute diagnostic tools.
 
 Model selection is not repeated by [protocol-gated HTTP stream recovery](transports/streaming-health.md#protocol-gated-http-stream-recovery); the selected request and its remaining allowance stay authoritative.
+
+Dashboard Fast-row persistence and client refresh follow the [Fast selector rows setting contract](gui-and-management-api.md#fast-selector-rows-setting).
