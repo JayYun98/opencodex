@@ -234,6 +234,10 @@ export async function prepareResponsesRequest(
     (body as { input?: unknown } | undefined)?.input,
   );
   const inboundClientThreadId = req.headers.get("x-codex-parent-thread-id")?.trim() || undefined;
+  // The request's OWN thread, which `x-codex-parent-thread-id` is not: parallel children of one
+  // parent all present the same parent id. `codexConversationIdentity` already reads this header
+  // for the same reason, and a surface that must tell siblings apart needs it too (#5033).
+  const inboundOwnThreadId = req.headers.get("thread-id")?.trim() || undefined;
   const cursorClientThreadId = codexPoolAffinityKey(req.headers);
   const originalBody = body;
   if (options.comboReplaySnapshot) {
@@ -306,6 +310,7 @@ export async function prepareResponsesRequest(
       ? options.comboReplaySnapshot.providerContinuation
       : previousResponseProviderState(parsed.previousResponseId);
     if (providerContinuationCandidate) parsed._providerContinuationCandidate = providerContinuationCandidate;
+    if (inboundOwnThreadId) parsed._codexOwnThreadId = inboundOwnThreadId;
     if (inboundClientThreadId) {
       parsed._clientThreadId = inboundClientThreadId;
     } else if (
@@ -714,6 +719,7 @@ export async function prepareResponsesRequest(
             "_providerContinuationOwner",
             "_cursorConversationId",
             "_clientThreadId",
+            "_codexOwnThreadId",
             "_promptCacheKeyIsSharedCohort",
             "_cursorClientThreadId",
             "_reasoningReplayScope",
