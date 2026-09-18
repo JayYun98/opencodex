@@ -174,6 +174,46 @@ describe("providerFetch fresh connection dispatch", () => {
     }
   });
 
+  test("wraps the provider-scoped fetch selected by a dispatch override", async () => {
+    const previous = process.env.OCX_FRESH_CONNECTION_HOSTS;
+    process.env.OCX_FRESH_CONNECTION_HOSTS = "special-relay.test";
+    let capturedProviderFetchCalls = 0;
+    let selectedProviderFetchCalls = 0;
+    let observedInit: RequestInit | undefined;
+
+    const capturedProvider: OcxProviderConfig = {
+      adapter: "openai-responses",
+      baseUrl: "https://old-relay.test/v1",
+      fetch: (async () => {
+        capturedProviderFetchCalls += 1;
+        return new Response("unexpected", { status: 500 });
+      }) as typeof globalThis.fetch,
+    };
+    const selectedProviderFetch = (async (_input, init) => {
+      selectedProviderFetchCalls += 1;
+      observedInit = init;
+      return new Response("ok", { status: 200 });
+    }) as typeof globalThis.fetch;
+
+    try {
+      const fetcher = providerFetch(capturedProvider, undefined, {
+        dispatchOverride: (_input, init, execute) =>
+          execute.withFetch(selectedProviderFetch, "https://special-relay.test/v1/responses", init),
+      });
+      const response = await fetcher("https://old-relay.test/v1/responses", { method: "POST" });
+
+      expect(response.status).toBe(200);
+      expect(capturedProviderFetchCalls).toBe(0);
+      expect(selectedProviderFetchCalls).toBe(1);
+      expect(observedInit?.keepalive).toBe(false);
+      expect(new Headers(observedInit?.headers).get("Connection")).toBe("close");
+      expect(observedInit?.redirect).toBe("manual");
+    } finally {
+      if (previous === undefined) delete process.env.OCX_FRESH_CONNECTION_HOSTS;
+      else process.env.OCX_FRESH_CONNECTION_HOSTS = previous;
+    }
+  });
+
   test("does not match a destination removed by a dispatch override", async () => {
     const previous = process.env.OCX_FRESH_CONNECTION_HOSTS;
     process.env.OCX_FRESH_CONNECTION_HOSTS = "special-relay.test";

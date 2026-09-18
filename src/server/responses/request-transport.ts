@@ -395,7 +395,7 @@ export async function prepareResponsesTransport(
       let dispatchInit = init;
       for (let attempt = 0; attempt < 3; attempt++) {
         if (selectionIsCurrent(requestBindings.get(wireRequest))) {
-          const fetchImpl = (route.provider as OcxProviderConfig & { fetch?: typeof globalThis.fetch }).fetch ?? execute;
+          const providerScopedFetch = (route.provider as OcxProviderConfig & { fetch?: typeof globalThis.fetch }).fetch;
           const binding = requestBindings.get(wireRequest);
           const snapshot = route.providerName === "anthropic" && anthropicPoolAccountId && binding?.kind === "oauth"
             ? binding.snapshot : undefined;
@@ -404,9 +404,13 @@ export async function prepareResponsesTransport(
           const ownsBearer = snapshot !== undefined
             && sentHeaders?.get("authorization") === `Bearer ${snapshot.accessToken}`
             && !sentHeaders?.has("x-api-key");
-          // Reselection can choose a provider override instead of the supplied executor.
+          // Reselection can choose a provider override after `providerFetch` captured its
+          // original base. Keep that newer transport, but run it through the supplied
+          // final-send policy so redirect and fresh-connection rules cannot be bypassed.
           commitKeyAttemptSend();
-          const response = await fetchImpl(destination, { ...dispatchInit, redirect: "manual" });
+          const response = providerScopedFetch
+            ? await execute.withFetch(providerScopedFetch, destination, dispatchInit)
+            : await execute(destination, dispatchInit);
           if (!response.ok) await recordKeyAttemptFailure(logCtx, response, dispatchInit.signal ?? options.abortSignal);
           // Observe each physical response before retries replace it. The binding belongs to
           // this dispatch, so a manual switch cannot file A's headers against B. Header

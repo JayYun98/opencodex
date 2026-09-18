@@ -47,7 +47,9 @@ modules merely because those imports existed in the pre-split `responses.ts` mon
 keep-alive reuse with `Connection: close` and `keepalive: false`; exact hosts and their subdomains
 match case-insensitively. The helper applies this policy at the final executor boundary, after a
 dispatch override has selected or rebuilt the destination, so matching follows the URL sent on the
-wire rather than the URL supplied before credential revalidation.
+wire rather than the URL supplied before credential revalidation. When credential revalidation
+selects a newer provider-scoped fetch, `ProviderDispatchExecutor.withFetch` keeps that transport but
+reapplies the same final-send policy around it; provider transport selection is not an escape hatch.
 
 ### Semantic progress ownership
 

@@ -135,6 +135,22 @@ Compare the diagnostic on the same machine and account under the two network
 modes. A successful TUN test alone does not identify why the service's HTTP proxy
 path failed, and does not establish a general fix.
 
+### Bypass a broken keep-alive pool for selected hosts
+
+Set `OCX_FRESH_CONNECTION_HOSTS` on the running proxy process when an upstream keeps leaving a
+half-dead pooled HTTP connection that fails on reuse. The value is a comma-separated hostname list:
+
+```bash
+OCX_FRESH_CONNECTION_HOSTS="api.example.com, gateway.example.net" ocx start
+```
+
+Matching is case-insensitive. Each entry matches the exact hostname and its subdomains, so
+`example.com` also matches `api.example.com`; it does not match `notexample.com`. Do not include a
+scheme, path, query or port. A matching final destination is sent with `Connection: close` and
+`keepalive: false`. This is a targeted compatibility fallback, not a general performance setting;
+leave it unset unless connection reuse is the confirmed failure boundary. A managed service reads
+the variable from its service environment and must be restarted after the value changes.
+
 ## Remote access
 
 The default `127.0.0.1` bind is loopback-only. A non-loopback address such as `0.0.0.0` or a tailnet

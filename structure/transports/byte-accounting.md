@@ -155,3 +155,5 @@ This reduces avoidable allocations; it is not a hard heap cap or a guarantee of 
 Schema size still determines traversal work and the cost of copying a changed broad container.
 `tests/adapters/openai/openai-chat-hardening.test.ts` covers wide, deep and mixed-array schemas;
 `tests/responses/openai-responses-passthrough.test.ts` covers the existing wire contract.
+
+Connection reuse policy remains owned by the [Responses final-send boundary](responses.md#fetch-helper-import-boundary); byte accounting neither selects nor bypasses the physical fetch.

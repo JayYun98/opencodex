@@ -78,6 +78,21 @@ export interface PaceAwareFetch {
 
 export type ProviderFetch = typeof globalThis.fetch & PaceAwareFetch;
 
+/**
+ * Final-send executor supplied to credential-revalidation callbacks.
+ *
+ * A callback may select a newer provider-scoped fetch after `providerFetch` was created.
+ * `withFetch` preserves the same redirect and fresh-connection policy around that newly
+ * selected physical transport instead of letting it bypass the final-send boundary.
+ */
+export type ProviderDispatchExecutor = typeof globalThis.fetch & {
+  withFetch: (
+    fetchImpl: typeof globalThis.fetch,
+    input: Parameters<typeof globalThis.fetch>[0],
+    init?: RequestInit,
+  ) => Promise<Response>;
+};
+
 export interface ProviderFetchOptions {
   nativeControl?: NativeResponseControl;
   providerName?: string;
@@ -89,7 +104,23 @@ export interface ProviderFetchOptions {
   /** Synchronous admission at actual credential dispatch, after pacing/backoff. */
   beforeDispatch?: (headers: Headers) => void;
   /** Revalidate/rebuild a queued request at its physical send boundary, after pacing. */
-  dispatchOverride?: (input: Parameters<typeof globalThis.fetch>[0], init: RequestInit, execute: typeof globalThis.fetch) => Promise<Response>;
+  dispatchOverride?: (input: Parameters<typeof globalThis.fetch>[0], init: RequestInit, execute: ProviderDispatchExecutor) => Promise<Response>;
+}
+
+function dispatchWithConnectionPolicy(
+  fetchImpl: typeof globalThis.fetch,
+  input: Parameters<typeof globalThis.fetch>[0],
+  init?: RequestInit,
+): Promise<Response> {
+  const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+  const fresh = wantsFreshConnection(input);
+  if (fresh) headers.set("Connection", "close");
+  return fetchImpl(input, {
+    ...init,
+    headers,
+    redirect: "manual",
+    ...(fresh ? { keepalive: false } : {}),
+  });
 }
 
 export function providerFetch(
@@ -104,21 +135,17 @@ export function providerFetch(
   // Rebuilt dispatches must use the same physical-send boundary as ordinary HTTP sends.
   // Return the original 3xx so the response owner retains its retry/health/relay contract.
   const dispatch = Object.assign(
-    (input: Parameters<typeof globalThis.fetch>[0], init?: RequestInit) => {
-      const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-      const fresh = wantsFreshConnection(input);
-      if (fresh) {
-        headers.set("Connection", "close");
-      }
-      return base(input, {
-        ...init,
-        headers,
-        redirect: "manual",
-        ...(fresh ? { keepalive: false } : {}),
-      });
+    (input: Parameters<typeof globalThis.fetch>[0], init?: RequestInit) =>
+      dispatchWithConnectionPolicy(base, input, init),
+    {
+      preconnect,
+      withFetch: (
+        fetchImpl: typeof globalThis.fetch,
+        input: Parameters<typeof globalThis.fetch>[0],
+        init?: RequestInit,
+      ) => dispatchWithConnectionPolicy(fetchImpl, input, init),
     },
-    { preconnect },
-  ) as typeof globalThis.fetch;
+  ) as ProviderDispatchExecutor;
   const httpFetch = Object.assign(
     async (input: Parameters<typeof globalThis.fetch>[0], init?: RequestInit) => {
       // The hook inspects the outgoing headers and refuses the send by throwing; it is not a

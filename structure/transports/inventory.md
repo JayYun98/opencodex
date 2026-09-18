@@ -211,3 +211,5 @@ The passthrough, adapter, continuation, sidecar and run-turn execution owners pa
 the same routed model during account rotation, without bypassing their send-budget
 admission or account-snapshot pairing. The forwarding contract is covered in
 `tests/oauth/oauth-account-quota-rank.test.ts`; the core facade remains orchestration-only.
+
+Every listed provider-scoped HTTP transport remains inside the [fresh-connection final-send contract](responses.md#fetch-helper-import-boundary); inventory selection is not an alternate physical-send path.

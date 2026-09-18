@@ -472,3 +472,5 @@ Codex App/CLI UI certification. The fixture suite also exercises real loopback s
 `tests/responses/ws-steering-completion.test.ts` and `ws-steering-smoke.test.ts`
 cover effective wire settings, immutable-route refusals, policy preservation,
 independent API credentials, unavailable-mode diagnostics and safe probe outcomes.
+
+Stream recovery and health observation preserve the [fresh-connection final-send contract](responses.md#fetch-helper-import-boundary) when a provider-scoped transport is selected after credential revalidation.
