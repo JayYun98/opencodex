@@ -4,6 +4,7 @@ import type { TKey } from "./en";
  * Chinese i18n catalog; must match the `TKey` set (compile-checked).
  */
 export const zh: Record<TKey, string> = {
+  "monitor.menuBarSettings": "菜单栏设置",
   "monitor.averageNote": "Values are per-series request averages/maxima; stacked height is not the average/maximum of all requests.",
   "nav.monitor": "Graphs · accounts · display",
   "monitor.showToday": "Today’s usage",

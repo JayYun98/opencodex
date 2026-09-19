@@ -4,7 +4,6 @@ import { normalizeHashPath } from "./hash-routing";
 
 export type Page =
   | "dashboard"
-  | "monitor"
   | "startup"
   | "providers"
   | "models"
@@ -18,7 +17,6 @@ export type Page =
 
 export const VALID_PAGES = new Set<Page>([
   "dashboard",
-  "monitor",
   "startup",
   "providers",
   "models",
@@ -35,6 +33,7 @@ export function readPageFromHash(hash?: string): Page {
   const raw = normalizeHashPath(
     hash ?? (typeof window !== "undefined" ? window.location.hash : ""),
   );
+  if (raw === "monitor" || raw.startsWith("monitor/")) return "usage";
   // Sub-views use a "/" suffix (e.g. #logs/debug); the first segment is the page id.
   const pageId = raw.split("/")[0] as Page;
   // Legacy: Debug used to be a standalone page; it now lives as a tab on Logs.
@@ -111,7 +110,7 @@ export const INTEGRATION_TAB_HASHES = [
 
 export function hashBelongsToPage(rawHash: string, page: Page): boolean {
   return rawHash === page
-    || (page === "monitor" && ["monitor/providers", "monitor/settings"].includes(rawHash))
+    || (page === "usage" && ["usage/monitor", "usage/monitor/providers", "usage/monitor/settings"].includes(rawHash))
     || (page === "logs" && rawHash === "logs/debug")
     || (page === "codex-set" && rawHash === "codex-set/prompt")
     || (page === "models" && (MODELS_TAB_HASHES as readonly string[]).includes(rawHash))
@@ -135,6 +134,9 @@ export type AppHashChangeAction = {
  */
 export function resolveAppHashChange(rawHash: string): AppHashChangeAction {
   const nextPage = readPageFromHash(rawHash);
+  if (rawHash === "monitor" || rawHash.startsWith("monitor/")) {
+    return { page: "usage", replaceTo: rawHash === "monitor/providers" ? "usage/monitor/providers" : "usage/monitor" };
+  }
 
   // Legacy: Debug used to be a standalone page.
   if (rawHash === "debug" || rawHash.startsWith("debug/")) {

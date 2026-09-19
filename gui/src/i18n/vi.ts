@@ -6,6 +6,7 @@ import type { TKey } from "./en";
  * Technical terms and model identifiers intentionally remain English.
  */
 export const vi: Record<TKey, string> = {
+  "monitor.menuBarSettings": "Cài đặt thanh menu",
   "monitor.averageNote": "Values are per-series request averages/maxima; stacked height is not the average/maximum of all requests.",
   "nav.monitor": "Graphs · accounts · display",
   "monitor.showToday": "Today’s usage",

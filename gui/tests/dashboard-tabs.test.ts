@@ -72,14 +72,11 @@ test("Dashboard uses the shared page-tabs strip with a tablist", async () => {
   expect(strip).toContain("overflow: visible");
 });
 
-test("monitor sidebar route survives refresh without becoming overview", () => {
-  expect(readPageFromHash("#monitor")).toBe("monitor");
-  expect(resolveAppHashChange("monitor")).toEqual({page:"monitor",replaceTo:null});
-});
-
-test("monitor tabs preserve direct links and browser history", () => {
-  for (const page of ["monitor/providers", "monitor/settings"]) {
-    expect(resolveAppHashChange(page)).toEqual({page:"monitor",replaceTo:null});
+test("legacy monitor links resolve into the existing Usage page", () => {
+  expect(readPageFromHash("#monitor")).toBe("usage");
+  expect(resolveAppHashChange("monitor")).toEqual({page:"usage",replaceTo:"usage/monitor"});
+  expect(resolveAppHashChange("monitor/providers")).toEqual({page:"usage",replaceTo:"usage/monitor/providers"});
+  for (const hash of ["usage/monitor", "usage/monitor/providers", "usage/monitor/settings"]) {
+    expect(resolveAppHashChange(hash)).toEqual({page:"usage",replaceTo:null});
   }
-  expect(resolveAppHashChange("monitor/nope").replaceTo).toBe("monitor");
 });

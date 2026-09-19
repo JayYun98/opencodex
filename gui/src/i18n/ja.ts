@@ -4,6 +4,7 @@ import type { TKey } from "./en";
  * Japanese i18n catalog; must match the `TKey` set (compile-checked).
  */
 export const ja: Record<TKey, string> = {
+  "monitor.menuBarSettings": "メニューバー設定",
   "monitor.averageNote": "Values are per-series request averages/maxima; stacked height is not the average/maximum of all requests.",
   "nav.monitor": "Graphs · accounts · display",
   "monitor.showToday": "Today’s usage",

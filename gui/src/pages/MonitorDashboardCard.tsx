@@ -34,7 +34,7 @@ function QuotaBar({ label, value, reset, config }: { label: string; value: numbe
   return <div className="monitor-quota"><span>{label}</span><div className="monitor-bar"><i style={{ width: `${remaining ?? 0}%`, background: themeColor(config[remaining === null ? "quotaUnknownColor" : remaining < 20 ? "quotaLowColor" : "quotaGoodColor"]) }} /></div><b>{remaining === null ? "—" : `${Math.round(remaining)}%`}</b></div>;
 }
 
-function readMonitorTab() { return window.location.hash === "#monitor/providers" ? "providers" : "usage"; }
+function readMonitorTab() { return window.location.hash === "#usage/monitor/providers" ? "providers" : "usage"; }
 
 export function MonitorDashboardCard() {
   const { locale, t } = useI18n();
@@ -46,7 +46,7 @@ export function MonitorDashboardCard() {
     return () => { window.removeEventListener("hashchange", sync); window.removeEventListener("popstate", sync); };
   }, []);
   const tabs = [{id:"usage",label:t("nav.usage")},{id:"providers",label:t("nav.providers")}];
-  const selectTab = (id: string) => { setTab(id); navigateHash(id === "usage" ? "monitor" : `monitor/${id}`); };
+  const selectTab = (id: string) => { setTab(id); navigateHash(id === "usage" ? "usage/monitor" : `usage/monitor/${id}`); };
 
   const [state, setState] = useState<MonitorState | null>(null);
   const [draft, setDraft] = useState("");

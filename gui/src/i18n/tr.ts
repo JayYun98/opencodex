@@ -5,6 +5,7 @@ import type { TKey } from "./en";
  * Turkish i18n catalog. Must match the `TKey` set (compile-checked).
  */
 export const tr: Record<TKey, string> = {
+  "monitor.menuBarSettings": "Menü çubuğu ayarları",
   "monitor.averageNote": "Values are per-series request averages/maxima; stacked height is not the average/maximum of all requests.",
   "nav.monitor": "Graphs · accounts · display",
   "monitor.showToday": "Today’s usage",

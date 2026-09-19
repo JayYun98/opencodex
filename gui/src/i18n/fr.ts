@@ -4,6 +4,7 @@ import type { TKey } from "./en";
  * French i18n catalog. Must match the `TKey` set.
  */
 export const fr: Record<TKey, string> = {
+  "monitor.menuBarSettings": "Paramètres de la barre des menus",
   "monitor.averageNote": "Les valeurs sont des moyennes ou maxima par requête et par série ; la hauteur empilée ne représente pas la moyenne ou le maximum de toutes les requêtes.",
   "nav.monitor": "Graphiques, comptes et affichage",
   "monitor.showToday": "Utilisation du jour",

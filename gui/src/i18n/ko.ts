@@ -4,6 +4,7 @@ import type { TKey } from "./en";
  * Korean i18n catalog; must match the `TKey` set (compile-checked).
  */
 export const ko: Record<TKey, string> = {
+  "monitor.menuBarSettings": "상단바 설정",
   "monitor.averageNote": "각 범례의 요청당 평균/최대입니다. 누적 막대 전체 높이는 전체 요청의 평균/최대가 아닙니다.",
   "nav.monitor": "그래프·계정·표시 설정",
   "monitor.showToday": "오늘 사용량",

@@ -1,3 +1,4 @@
+import { UsageMonitorSection } from "./UsageMonitorSection";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useI18n, type TFn, type Locale } from "../i18n/shared";
@@ -861,6 +862,7 @@ function UsageCoveragePanel({
  * Models / Providers / Coverage do not stack into a long scroll.
  */
 function UsageWorkspaceBody({
+  localMonitor,
   data,
   heatmap,
   weekBars,
@@ -873,6 +875,7 @@ function UsageWorkspaceBody({
   locale,
   t,
 }: {
+  localMonitor: boolean;
   data: UsageResponse | null;
   heatmap: ReturnType<typeof buildHeatmap>;
   weekBars: UsageDay[];
@@ -920,6 +923,7 @@ function UsageWorkspaceBody({
       meta: data ? formatPct(data.summary.coverageRatio) : "—",
       body: data ? <UsageCoveragePanel summary={data.summary} t={t} workspace /> : null,
     },
+    ...(localMonitor ? [{ id: "monitor", label: t("monitor.menuBarSettings"), meta: undefined, body: <UsageMonitorSection /> }] : []),
   ];
   return (
     <div className="usage-workspace-shell">
@@ -935,7 +939,8 @@ function UsageWorkspaceBody({
           items={sections.map(s => ({ id: s.id, label: s.label, meta: s.meta }))}
         />
         <section className="usage-workspace-main" aria-label={t("usage.workspace.report")}>
-          {empty ? <EmptyState title={t("usage.empty")} /> : sections.map(s => (
+          {empty && <EmptyState title={t("usage.empty")} />}
+          {sections.filter(s => !empty || s.id === "monitor").map(s => (
             <div key={s.id} id={sectionAnchorId("usage", s.id)} className="usw-body usw-section-block">
               {s.body}
             </div>
@@ -1179,6 +1184,7 @@ export default function Usage({ apiBase, connected = false, apiKeyId }: { apiBas
             </Notice>
           )}
           <UsageWorkspaceBody
+            localMonitor={!connected}
             data={data}
             heatmap={heatmap}
             weekBars={weekBars}
@@ -1193,6 +1199,7 @@ export default function Usage({ apiBase, connected = false, apiKeyId }: { apiBas
           />
         </>
       )}
+      {!connected && !data && (state.showSkeleton || state.kind === "failed-cold") && <UsageMonitorSection />}
     </>
   );
 }

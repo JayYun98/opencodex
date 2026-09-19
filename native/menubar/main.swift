@@ -355,7 +355,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func openMonitor() {
-        NSWorkspace.shared.open(URL(string: "http://127.0.0.1:10100/#monitor")!)
+        NSWorkspace.shared.open(URL(string: "http://127.0.0.1:10100/#usage/monitor")!)
     }
     @objc func refreshClicked() { Task { await refresh() } }
     @objc func openDashboard() { NSWorkspace.shared.open(base) }

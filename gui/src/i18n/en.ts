@@ -6,6 +6,7 @@
  * `{var}` are plain interpolations.
  */
 export const en = {
+  "monitor.menuBarSettings": "Menu bar settings",
   "monitor.averageNote": "Values are per-series request averages/maxima; stacked height is not the average/maximum of all requests.",
   "nav.monitor": "Graphs · accounts · display",
   "monitor.showToday": "Today’s usage",

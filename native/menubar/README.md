@@ -213,8 +213,8 @@ is not the average/maximum across all requests. The UI explains this distinction
 ## Existing web dashboard integration
 
 The local Monitor exposes its already-collected, credential-free snapshot on
-`127.0.0.1:10101`. The matching OpenCodex web dashboard’s **그래프·계정·표시 설정** sidebar page
-(`#monitor`) displays the graph, account/provider quotas, and display settings. Menu settings
+`127.0.0.1:10101`. The matching OpenCodex web dashboard’s **Usage → Menu bar settings** section
+(`#usage/monitor`) displays the graph, account/provider quotas, and display settings. Menu settings
 open the existing web dashboard rather than a separate native settings window.
 The monitor must remain running. The proxy process and its routing are unchanged.
 

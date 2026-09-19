@@ -78,9 +78,9 @@ badge or the version value to read the full value.
 
 ### Local monitor
 
-The **Graphs · accounts · display** sidebar page (`#monitor`) displays the optional menu-bar
+The **Usage → Menu bar settings** section (`#usage/monitor`) displays the optional menu-bar
 monitor’s usage and settings inside the existing dashboard, without a separate native window.
-The page has **Usage** and **Providers** tabs, using the dashboard’s shared tab and select styles.
+The section follows **Coverage breakdown** and has **Usage** and **Providers** tabs, using the dashboard’s shared tab and select styles.
 Display settings appear directly below the Usage graph; provider visibility controls live in Providers.
 The full JSON editor is collapsed under Display settings until expanded.
 The panel refreshes every five seconds while the tab is visible and shows token history, compact

@@ -2,6 +2,7 @@ import type { TKey } from "./en";
 
 /** Traditional Chinese (Taiwan) UI strings — keys must match `en.ts` 1:1. */
 export const zhTW: Record<TKey, string> = {
+  "monitor.menuBarSettings": "選單列設定",
   "monitor.averageNote": "數值為各序列每次請求的平均值或最大值；堆疊高度不代表所有請求的平均值或最大值。",
   "nav.monitor": "圖表 · 帳戶 · 顯示",
   "monitor.showToday": "今日用量",

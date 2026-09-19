@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useKeyedClientResource } from "./client-resource";
 import Dashboard from "./pages/Dashboard";
-import { MonitorDashboardCard } from "./pages/MonitorDashboardCard";
 import Providers from "./pages/Providers";
 import Models from "./pages/Models";
 import Subagents from "./pages/Subagents";
@@ -36,7 +35,6 @@ const PAGE_TKEY: Record<Page, TKey> = {
   subagents: "nav.subagents",
   logs: "nav.logs",
   usage: "nav.usage",
-  monitor: "nav.monitor",
   storage: "nav.storage",
   remote: "nav.remote",
   "codex-set": "nav.codexSet",
@@ -71,7 +69,6 @@ const NAV: NavEntry[] = [
   { id: "subagents", tkey: "nav.subagents", Icon: IconBot },
   { id: "logs", tkey: "nav.logs", Icon: IconList },
   { id: "usage", tkey: "nav.usage", Icon: IconActivity },
-  { id: "monitor", tkey: "nav.monitor", Icon: IconActivity },
   { id: "storage", tkey: "nav.storage", Icon: IconHardDrive },
   { id: "remote", tkey: "nav.remote", Icon: IconMonitor },
   { id: "integrations", tkey: "nav.integrations", Icon: IconGlobe },
@@ -446,7 +443,6 @@ export default function App() {
                 )}
                 {page === "dashboard" && <Dashboard apiBase={sharedBase} connected={targets.connected}
                   authenticationPending={targets.connected && !sharedSessionReady} refreshEpoch={sharedSessionEpoch} />}
-                {page === "monitor" && <div className="dashboard-workspace-shell"><div className="page-head"><h2>{t("nav.monitor")}</h2></div><MonitorDashboardCard /></div>}
                 {page === "startup" && <Startup apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} />}
                 {page === "providers" && <Providers apiBase={sharedBase} />}
                 {page === "models" && <Models key={sharedBase} apiBase={sharedBase} restartEpoch={codexRestartEpoch} catalogSyncedAt={targets.catalogSyncedAt} />}

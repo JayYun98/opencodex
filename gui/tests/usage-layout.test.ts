@@ -170,6 +170,10 @@ test("Usage breakdown tables distinguish priced zero totals from excluded reques
       });
     }
 
+    const sectionButtons = [...container.querySelectorAll('.section-tabs [role="tab"]')];
+    const labels = sectionButtons.map(button => button.textContent ?? "");
+    expect(labels.at(-1)).toContain("Menu bar settings");
+    expect(labels.at(-2)).toContain("Coverage");
     expect(container.textContent).toContain("~$1.2500");
     expect(container.textContent).toContain("~$0.0000");
     expect(container.textContent).toContain("— (1 request excluded)");
