@@ -140,6 +140,11 @@ processes are one logical runner, while each process still installs its own isol
 guards. The workflow contract and process bounds live in
 [`ops/docs-and-release.md`](ops/docs-and-release.md#cross-platform-ci).
 
+`structure/manifest.json` declares both source-review coverage and cross-cutting contract authority.
+`scripts/structure-ssot.ts` validates that topology, and generated `structure/INDEX.md` publishes it.
+The [structure rules](AGENTS.md#the-source-to-doc-map) define when review requires a content edit;
+contract authority never reduces the source map's many-to-many review fan-out.
+
 Two invariants are stated here without a binding, and `grace.unboundInvariants` in
 [`manifest.json`](manifest.json) carries the reason for each. They are true statements about the system;
 no test in this repository currently pins them, and saying so is more useful than naming a test that
