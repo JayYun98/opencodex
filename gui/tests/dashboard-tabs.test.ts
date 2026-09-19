@@ -71,3 +71,15 @@ test("Dashboard uses the shared page-tabs strip with a tablist", async () => {
   expect(strip).toContain("flex-wrap: wrap");
   expect(strip).toContain("overflow: visible");
 });
+
+test("monitor sidebar route survives refresh without becoming overview", () => {
+  expect(readPageFromHash("#monitor")).toBe("monitor");
+  expect(resolveAppHashChange("monitor")).toEqual({page:"monitor",replaceTo:null});
+});
+
+test("monitor tabs preserve direct links and browser history", () => {
+  for (const page of ["monitor/providers", "monitor/settings"]) {
+    expect(resolveAppHashChange(page)).toEqual({page:"monitor",replaceTo:null});
+  }
+  expect(resolveAppHashChange("monitor/nope").replaceTo).toBe("monitor");
+});

@@ -40,6 +40,7 @@ const TECHNICAL_UNITS = new Set([
   "ms",
   "k",
   "1M",
+  "M", // Decimal token unit used by the native monitor.
   "c",
   "w",
   "v",
@@ -53,6 +54,8 @@ const TECHNICAL_UNITS = new Set([
 
 /** Non-UI technical strings (API paths, CSS, shell, headers, debug fields). */
 export function isTechnicalLiteral(value: string): boolean {
+  // Literal template field suffixes, not translatable UI copy.
+  if ([".raw", ".compact", ".formatted"].includes(value)) return true;
   const trimmed = value.trim();
   if (!trimmed) return true;
 

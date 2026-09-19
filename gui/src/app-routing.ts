@@ -4,6 +4,7 @@ import { normalizeHashPath } from "./hash-routing";
 
 export type Page =
   | "dashboard"
+  | "monitor"
   | "startup"
   | "providers"
   | "models"
@@ -17,6 +18,7 @@ export type Page =
 
 export const VALID_PAGES = new Set<Page>([
   "dashboard",
+  "monitor",
   "startup",
   "providers",
   "models",
@@ -109,6 +111,7 @@ export const INTEGRATION_TAB_HASHES = [
 
 export function hashBelongsToPage(rawHash: string, page: Page): boolean {
   return rawHash === page
+    || (page === "monitor" && ["monitor/providers", "monitor/settings"].includes(rawHash))
     || (page === "logs" && rawHash === "logs/debug")
     || (page === "codex-set" && rawHash === "codex-set/prompt")
     || (page === "models" && (MODELS_TAB_HASHES as readonly string[]).includes(rawHash))

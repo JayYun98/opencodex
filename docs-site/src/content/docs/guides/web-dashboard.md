@@ -76,6 +76,23 @@ one column and model/effort controls share another. On narrower screens, control
 labels in the same reading order. Long version labels are shortened visually; hover the version
 badge or the version value to read the full value.
 
+### Local monitor
+
+The **Graphs · accounts · display** sidebar page (`#monitor`) displays the optional menu-bar
+monitor’s usage and settings inside the existing dashboard, without a separate native window.
+The page has **Usage** and **Providers** tabs, using the dashboard’s shared tab and select styles.
+Display settings appear directly below the Usage graph; provider visibility controls live in Providers.
+The full JSON editor is collapsed under Display settings until expanded.
+The panel refreshes every five seconds while the tab is visible and shows token history, compact
+account and provider quota bars, and summary totals. If the monitor is unavailable, the rest of
+the OpenCodex dashboard continues to work.
+
+Use the graph, provider-visibility and model-filter controls, or edit the complete configuration
+as JSON under **Monitor settings**. This includes the
+chart style and grouping, time range, bucket size, aggregation, token metric, model filters,
+provider visibility, display text, colours, and graph dimensions. Saving uses the configuration
+revision currently shown by the monitor; if somebody else changed it first, discard the stale draft and reapply your edits. Chart regeneration happens asynchronously after a successful save.
+
 ## What you can do
 
 | Area | What it does |
