@@ -14,6 +14,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { removeTreeWithRetry } from "../helpers/remove-tree";
+import { saveCredential } from "../../src/oauth/store";
 
 /**
  * One logical request, one send budget -- asserted as a COUNT, because the defect in #4546 is a
@@ -105,6 +106,16 @@ describe("upstream sends per logical request", () => {
     process.env.OPENCODEX_HOME = home;
     delete process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
     const apiKey = "devin-count-test";
+    // Devin is an OAuth-kind provider: the key the adapter ends up using is injected onto the
+    // row from the stored credential, so a config that only carries `apiKey` never routes. The
+    // credential is what makes this the path production takes.
+    await saveCredential("devin", {
+      access: apiKey,
+      refresh: apiKey,
+      expires: Number.MAX_SAFE_INTEGER,
+      source: "oauth",
+      apiBaseUrl: DEVIN_API_SERVER,
+    });
     setCachedCatalogForTests({
       apiKey,
       host: DEVIN_API_SERVER,
@@ -121,9 +132,7 @@ describe("upstream sends per logical request", () => {
       defaultProvider: "devin",
       providers: {
         devin: {
-          // `authMode` is what admits this row on the counted path; without it the turn is
-          // refused before the adapter runs and the send this case is about never happens.
-          adapter: "devin", baseUrl: DEVIN_API_SERVER, authMode: "key", apiKey, models: ["swe-2"],
+          adapter: "devin", baseUrl: DEVIN_API_SERVER, models: ["swe-2"],
         },
       },
     } as unknown as OcxConfig;
