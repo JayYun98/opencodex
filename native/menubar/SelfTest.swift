@@ -17,7 +17,7 @@ func dataSelfTest() throws {
     precondition(custom.todayTitle == english.todayTitle && custom.todayLines == english.todayLines && custom.menuBarTemplate == english.menuBarTemplate)
     let migrated = try MonitorConfig.decode(Data(#"{"language":"en","todayTitle":"오늘 사용량"}"#.utf8))
     precondition(migrated.todayTitle == "Today’s usage")
-    do { _ = try MonitorConfig.decode(Data(#"{"language":"unsupported"}"#.utf8)); fatalError("Invalid language accepted") } catch { }
+    do { _ = try MonitorConfig.decode(Data(#"{"language":"unsupported"}"#.utf8)); fatalError("Invalid language accepted") } catch { precondition(error is CocoaError || error is DecodingError, "Unexpected validation error: \(error)") }
     precondition(AccountInfo(id: "__main__").name(MonitorLanguage("en")) == "Codex main account")
     precondition(quotaText(nil, reset: nil, language: MonitorLanguage("en")) == "Unavailable")
     let englishWindows = try goWindows(Data(#"{"usage":{}}"#.utf8), language: MonitorLanguage("en"))
@@ -31,14 +31,14 @@ func dataSelfTest() throws {
     let partial = try MonitorHTTPRequest.parse(Data(requestBytes.prefix(10)))
     precondition(partial == nil)
     for invalid in ["POST /config HTTP/1.1\r\nContent-Length: -1\r\n\r\n", "GET /state HTTP/1.1\r\nHost: x\r\nHost: y\r\n\r\n", "GET /state HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"] {
-        do { _ = try MonitorHTTPRequest.parse(Data(invalid.utf8)); fatalError("Invalid HTTP accepted") } catch { }
+        do { _ = try MonitorHTTPRequest.parse(Data(invalid.utf8)); fatalError("Invalid HTTP accepted") } catch { precondition(error is CocoaError || error is DecodingError, "Unexpected validation error: \(error)") }
     }
     var config = try MonitorConfig.decode(Data(#"{"bucketMinutes":15,"menuBarMetric":"tokens"}"#.utf8))
     precondition(config.showToday && config.bucketMinutes == 15 && config.menuBarMetric == "tokens")
     do {
         _ = try MonitorConfig.decode(Data(#"{"bucketMinutes":0}"#.utf8))
         fatalError("Invalid config accepted")
-    } catch { }
+    } catch { precondition(error is CocoaError || error is DecodingError, "Unexpected validation error: \(error)") }
     config.hiddenProviders = ["opencode-go"]
     let providerConfig = try MonitorConfig.decode(JSONEncoder().encode(config))
     precondition(!providerConfig.showsProvider("opencode-go") && providerConfig.showsProvider("openai"))
@@ -58,7 +58,7 @@ func dataSelfTest() throws {
     precondition(styled.menuWidth == 420 && styled.todayLines == ["호출 {requests}번"] && styled.modelColors["test/a"] == "#AA00FF")
     for bad in [##"{"textColor":"red"}"##, ##"{"graphPalette":[]}"##, ##"{"menuWidth":0}"##] {
         do { _ = try MonitorConfig.decode(Data(bad.utf8)); fatalError("Invalid appearance accepted") }
-        catch { }
+        catch { precondition(error is CocoaError || error is DecodingError, "Unexpected validation error: \(error)") }
     }
     let now = Date(timeIntervalSince1970: 1_800_000_000)
     let row = UsageRow(requestId: "one", timestamp: now.timeIntervalSince1970 * 1000,
@@ -104,14 +104,14 @@ func dataSelfTest() throws {
     let persisted = try MonitorConfig.decode(JSONEncoder().encode(grouped))
     precondition(persisted.chartStyle == "stackedBar" && persisted.chartGrouping == "modelAccount")
     for invalid in [#"{"chartStyle":"pie"}"#, #"{"chartGrouping":"bad"}"#] {
-        do { _ = try MonitorConfig.decode(Data(invalid.utf8)); fatalError("Invalid chart option") } catch { }
+        do { _ = try MonitorConfig.decode(Data(invalid.utf8)); fatalError("Invalid chart option") } catch { precondition(error is CocoaError || error is DecodingError, "Unexpected validation error: \(error)") }
     }
     let customInterval = try MonitorConfig.decode(Data(#"{"bucketMinutes":7}"#.utf8))
     precondition(customInterval.bucketMinutes == 7)
     precondition(aggregate([row], config: customInterval, now: now).bucketSeconds == 420)
     precondition(aggregate([row], config: customInterval, now: now).points.reduce(0) { $0 + $1.tokens } == 120)
     for invalid in [#"{"bucketMinutes":1441}"#, #"{"bucketMinutes":-1}"#, #"{"bucketMinutes":1.5}"#] {
-        do { _ = try MonitorConfig.decode(Data(invalid.utf8)); fatalError("Invalid bucket interval") } catch { }
+        do { _ = try MonitorConfig.decode(Data(invalid.utf8)); fatalError("Invalid bucket interval") } catch { precondition(error is CocoaError || error is DecodingError, "Unexpected validation error: \(error)") }
     }
     var calculated = MonitorConfig()
     var retrySame = row
@@ -128,7 +128,7 @@ func dataSelfTest() throws {
     precondition(aggregate([retrySame, other], config: calculated, now: now).points.reduce(0) { $0 + $1.tokens } == 60)
     let calculationRoundTrip = try MonitorConfig.decode(JSONEncoder().encode(calculated))
     precondition(calculationRoundTrip.aggregation == "max")
-    do { _ = try MonitorConfig.decode(Data(#"{"aggregation":"median"}"#.utf8)); fatalError("Invalid calculation") } catch { }
+    do { _ = try MonitorConfig.decode(Data(#"{"aggregation":"median"}"#.utf8)); fatalError("Invalid calculation") } catch { precondition(error is CocoaError || error is DecodingError, "Unexpected validation error: \(error)") }
     let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: folder) }

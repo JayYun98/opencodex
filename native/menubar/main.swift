@@ -374,7 +374,7 @@ if CommandLine.arguments.contains("--self-test") {
     do {
         _ = try JSONDecoder().decode(Usage.self, from: Data("{}".utf8))
         fatalError("Malformed responses must fail instead of showing zero usage")
-    } catch { }
+    } catch { precondition(error is DecodingError, "Expected a usage decoding error, got: \(error)") }
     try dataSelfTest()
     print("PASS: formatting, usage decoding, absent pricing, malformed response, graph aggregation, quotas, config")
 } else {
