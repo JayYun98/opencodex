@@ -491,6 +491,10 @@ export function createDevinAdapter(
 
   return {
     name: "devin",
+    // Every GetChatMessage send, including the first, is admitted through the shared budget and
+    // reported from the executor that dispatches it. The caller therefore leaves the first
+    // send's accounting here rather than logging it before admission can refuse it.
+    reportsPhysicalSends: true,
 
     buildRequest() {
       return {
