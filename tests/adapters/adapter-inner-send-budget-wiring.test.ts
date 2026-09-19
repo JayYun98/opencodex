@@ -9,6 +9,8 @@ import {
 } from "../../src/adapters/cursor/thread-continuity";
 import type { CursorTransport } from "../../src/adapters/cursor/transport";
 import { createKiroAdapter } from "../../src/adapters/kiro";
+import { createDevinAdapter, DEVIN_API_SERVER } from "../../src/adapters/devin";
+import { setCachedCatalogForTests } from "../../src/adapters/devin/cloud-direct/catalog";
 import { resetKiroThrottleStateForTests } from "../../src/adapters/kiro-retry";
 import type { AdapterFetchContext } from "../../src/adapters/base";
 import { encodeMessage } from "../../src/lib/eventstream-decoder";
@@ -119,6 +121,63 @@ describe("Cursor runTurn and the request send budget", () => {
     // unit test that builds a bare meta, behaves exactly as it did.
     expect(transports).toBe(3);
     expect(events.at(-1)?.type).toBe("error");
+  });
+});
+
+describe("Devin runTurn execution wiring", () => {
+  test("forwards the provider executor, shared budget, and physical-send observer", async () => {
+    const previousHome = process.env.OPENCODEX_HOME;
+    const previousJwtFlag = process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+    const home = mkdtempSync(join(tmpdir(), "devin-send-wiring-"));
+    process.env.OPENCODEX_HOME = home;
+    delete process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+    const apiKey = "devin-test-key";
+    setCachedCatalogForTests({
+      apiKey,
+      host: DEVIN_API_SERVER,
+      fetchedAt: Date.now(),
+      byUid: new Map([["swe-2", { modelUid: "swe-2", label: "SWE-2", disabled: false }]]),
+    });
+    const budget = budgetOf(1);
+    const observed: Array<{ ordinal: number; recovery?: string }> = [];
+    const urls: string[] = [];
+    const events: AdapterEvent[] = [];
+    const adapter = createDevinAdapter({
+      adapter: "devin", baseUrl: DEVIN_API_SERVER, apiKey,
+    } as unknown as OcxProviderConfig);
+
+    try {
+      await adapter.runTurn?.(
+        {
+          modelId: "swe-2", stream: true, options: {},
+          context: { messages: [{ role: "user", content: "hi" }] },
+        } as unknown as OcxParsedRequest,
+        {
+          headers: new Headers(),
+          translatorBudget: createTestTranslatorBudget(),
+          sendBudget: budget,
+          providerFetch: (async input => {
+            urls.push(String(input));
+            return new Response("busy", { status: 500 });
+          }) as typeof fetch,
+          onPhysicalSend: send => { observed.push(send); },
+        },
+        event => events.push(event),
+      );
+    } finally {
+      setCachedCatalogForTests(null);
+      if (previousHome === undefined) delete process.env.OPENCODEX_HOME;
+      else process.env.OPENCODEX_HOME = previousHome;
+      if (previousJwtFlag === undefined) delete process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+      else process.env.OPENCODEX_DEVIN_SEND_USER_JWT = previousJwtFlag;
+      removeTreeWithRetry(home);
+    }
+
+    expect(urls).toHaveLength(1);
+    expect(urls[0]).toContain("GetChatMessage");
+    expect(budget.used).toBe(1);
+    expect(observed).toEqual([{ ordinal: 1 }]);
+    expect(events.at(-1)).toMatchObject({ type: "error", status: 500 });
   });
 });
 

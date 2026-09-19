@@ -15,6 +15,7 @@ import { getCachedCatalog, type CacheEntry } from "./devin/cloud-direct/catalog"
 import { collapseDevinModelUid } from "./devin/live-models";
 import { buildNonOpenAIToolCatalogNudgeForTools } from "./tool-catalog-nudge";
 import { DEVIN_DEFAULT_API_SERVER, resolveDevinApiServer } from "../oauth/devin";
+import { SendBudgetExhaustedError } from "../lib/upstream-retry";
 
 /**
  * Combine two usage frames from one turn by keeping the larger count per field.
@@ -584,6 +585,13 @@ export function createDevinAdapter(
             ...(typeof parsed.options.topP === "number" ? { topP: parsed.options.topP } : {}),
           },
           signal: incoming.abortSignal,
+        }, {
+          execution: {
+            executor: incoming.providerFetch,
+            sendBudget: incoming.sendBudget,
+            onPhysicalSend: incoming.onPhysicalSend,
+            onRecoveryWithheld: incoming.onRecoveryWithheld,
+          },
         })) {
           if (incoming.abortSignal?.aborted) {
             // Emitting nothing here left the bridge to synthesize adapter_eof.
@@ -662,6 +670,9 @@ export function createDevinAdapter(
           emit({ type: "error", message: DEVIN_CLIENT_CLOSED_MESSAGE, status: 499, retryable: false, ...(usage ? { usage } : {}) });
           return;
         }
+        // The Responses boundary already maps this local refusal to its structured 429 code.
+        // Converting it to an adapter event would make it an ordinary untyped upstream error.
+        if (error instanceof SendBudgetExhaustedError) throw error;
         const message = error instanceof CloudChatError
           ? ("Devin cloud error" + (error.code ? " " + error.code : "") + ": " + error.message)
           : error instanceof Error ? error.message : String(error);

@@ -31,6 +31,17 @@ export interface IncomingMeta {
    * behind it (#4546).
    */
   sendBudget?: RequestExecutionBudget;
+  /**
+   * Physical-send observations for runTurn adapters. Without the same callback carried by
+   * AdapterFetchContext, an adapter-owned replay spends the shared budget but remains absent
+   * from the request's sendCount.
+   */
+  onPhysicalSend?: (send: { ordinal: number; recovery?: AttemptRecoveryKind }) => void;
+  /**
+   * Recovery refusals for runTurn adapters. A refused replay is not a send, so this separate
+   * channel explains why recovery stopped without inflating physical-send telemetry.
+   */
+  onRecoveryWithheld?: (withheld: { reason: AttemptRecoveryWithheld }) => void;
 }
 
 export interface ProviderAdapter {

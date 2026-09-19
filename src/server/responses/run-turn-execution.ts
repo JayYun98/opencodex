@@ -79,7 +79,11 @@ export async function executeResponsesRunTurn(
   >,
   sendBudgetState: Pick<
     ResponsesSendBudget,
-    "adapterDispatchBudget" | "reserveCredentialHop" | "pendingHopPermit"
+    | "adapterDispatchBudget"
+    | "noteAdapterPhysicalSend"
+    | "noteAdapterRecoveryWithheld"
+    | "reserveCredentialHop"
+    | "pendingHopPermit"
   >,
   completionPolicy: Pick<ResponsesCompletionPolicy, "emptyCompletionGuardEnabled">,
 ): Promise<Response> {
@@ -100,7 +104,12 @@ export async function executeResponsesRunTurn(
     rememberKiroDeliveredFinalAnswer,
     responseStateOptions,
   } = requestState;
-  const { adapterDispatchBudget, reserveCredentialHop } = sendBudgetState;
+  const {
+    adapterDispatchBudget,
+    noteAdapterPhysicalSend,
+    noteAdapterRecoveryWithheld,
+    reserveCredentialHop,
+  } = sendBudgetState;
   const { emptyCompletionGuardEnabled } = completionPolicy;
   const {
     cancelResponseCompletion,
@@ -169,6 +178,8 @@ export async function executeResponsesRunTurn(
             // The only way the request budget reaches a transport the adapter owns. Without it
             // a Cursor turn's inner ladder was three physical sends the cap read as one.
             ...(adapterDispatchBudget ? { sendBudget: adapterDispatchBudget } : {}),
+            onPhysicalSend: send => noteAdapterPhysicalSend(logCtx.usageLogInputTokens, send),
+            onRecoveryWithheld: noteAdapterRecoveryWithheld,
           },
           targetQueue.push,
         );

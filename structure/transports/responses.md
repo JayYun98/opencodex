@@ -941,13 +941,22 @@ The hop pays for a replay that some *other* layer dispatches, so which layer set
 reservation follows the dispatcher, not the ladder. A helper-routed replay reports the same
 physical send back through `onSendsConsumed`; that is what `countedExternally: true` names, and the
 reporter's first send settles the pending booking instead of adding a second charge. An adapter
-that owns its transport — Kiro's reset ladder, Cursor's transport ladder — reserves once per
-physical send instead, so no reporter ever arrives. Those ladders are handed
+that owns its transport — Kiro's reset ladder, Cursor's transport ladder, or Devin's bounded
+pre-output stated-reset replay — reserves once per physical send instead, so no reporter ever
+arrives. Those ladders are handed
 `adapterDispatchBudget`, a live delegating view of the same budget that spends a permit passed down
 through `pendingHopPermit` on the adapter's first reservation and closes the booking through
 `permit.assumeCharge()`. Letting both charge is how one physical send became two charges, and how a
 spent allowance answered a 429 with a synthetic error instead of the rate limit it was recovering
 from (#4709).
+
+`run-turn-execution.ts` passes the same physical-send and recovery-withheld observers used by the
+request-building adapter path. Devin builds one `createAdapterPhysicalSend` for the whole
+`GetChatMessage` invocation, so its initial POST and at most two same-target replays report ordinals
+1, 2, and 3. The outer runTurn attempt already records ordinal 1, and the shared observer therefore
+adds only ordinals above 1 to `sendCount`; the execution budget still reserves every ordinal. A
+replay reserves only after its server-stated wait. If admission is refused, no inference I/O occurs,
+`retry-send-budget` is recorded, and the preceding provider 429 remains the returned error.
 
 Confirmation happens at the dispatch boundary rather than at the rotation. `adapter-dispatch.ts`
 passes an `onDispatch` callback that the rebuild invokes immediately before the wire, and skips it

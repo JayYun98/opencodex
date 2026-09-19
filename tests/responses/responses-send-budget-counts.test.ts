@@ -8,6 +8,12 @@ import { handleResponses } from "../../src/server/responses/core";
 import { COMBO_TARGET_BASE_SENDS, comboExecutionBudgetPolicy } from "../../src/server/responses/core-combo";
 import type { RequestLogContext } from "../../src/server/request-log";
 import type { OcxConfig } from "../../src/types";
+import { DEVIN_API_SERVER } from "../../src/adapters/devin";
+import { setCachedCatalogForTests } from "../../src/adapters/devin/cloud-direct/catalog";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { removeTreeWithRetry } from "../helpers/remove-tree";
 
 /**
  * One logical request, one send budget -- asserted as a COUNT, because the defect in #4546 is a
@@ -31,6 +37,7 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  setCachedCatalogForTests(null);
   clearComboSelectionState();
   clearComboTargetCooldowns();
   clearKeyCooldowns();
@@ -91,6 +98,49 @@ const totalSends = (logCtx: RequestLogContext): number =>
   sendCounts(logCtx).reduce((sum, count) => sum + count, 0);
 
 describe("upstream sends per logical request", () => {
+  test("Devin's initial inner send is recorded once, not omitted or double-counted", async () => {
+    const previousHome = process.env.OPENCODEX_HOME;
+    const previousJwtFlag = process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+    const home = mkdtempSync(join(tmpdir(), "devin-send-count-"));
+    process.env.OPENCODEX_HOME = home;
+    delete process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+    const apiKey = "devin-count-test";
+    setCachedCatalogForTests({
+      apiKey,
+      host: DEVIN_API_SERVER,
+      fetchedAt: Date.now(),
+      byUid: new Map([["swe-2", { modelUid: "swe-2", label: "SWE-2", disabled: false }]]),
+    });
+    const urls: string[] = [];
+    globalThis.fetch = (async input => {
+      urls.push(String(input));
+      return new Response("busy", { status: 500 });
+    }) as typeof fetch;
+    const logCtx: RequestLogContext = { model: "", provider: "" };
+    const config = {
+      defaultProvider: "devin",
+      providers: {
+        devin: {
+          adapter: "devin", baseUrl: DEVIN_API_SERVER, apiKey, models: ["swe-2"],
+        },
+      },
+    } as unknown as OcxConfig;
+
+    try {
+      const response = await handleResponses(responsesRequest("devin/swe-2"), config, logCtx);
+      await response.text();
+
+      expect(urls.filter(url => url.includes("GetChatMessage"))).toHaveLength(1);
+      expect(totalSends(logCtx)).toBe(1);
+    } finally {
+      if (previousHome === undefined) delete process.env.OPENCODEX_HOME;
+      else process.env.OPENCODEX_HOME = previousHome;
+      if (previousJwtFlag === undefined) delete process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+      else process.env.OPENCODEX_DEVIN_SEND_USER_JWT = previousJwtFlag;
+      removeTreeWithRetry(home);
+    }
+  });
+
   test("a 5xx streak on a single target spends the base allowance and stops", async () => {
     const upstream = alwaysFailing(502, "upstream busy");
     const logCtx: RequestLogContext = { model: "", provider: "" };
