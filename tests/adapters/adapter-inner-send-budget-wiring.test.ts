@@ -179,6 +179,64 @@ describe("Devin runTurn execution wiring", () => {
     expect(observed).toEqual([{ ordinal: 1 }]);
     expect(events.at(-1)).toMatchObject({ type: "error", status: 500 });
   });
+
+  test("a first send the budget refuses makes no request and reports no send", async () => {
+    // The accounting defect this pins: the caller used to log this turn's first send before the
+    // adapter ran, so an allowance already spent by earlier recovery produced a logged send the
+    // wire never made. Nothing is dispatched here, so nothing may be observed either.
+    const previousHome = process.env.OPENCODEX_HOME;
+    const previousJwtFlag = process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+    const home = mkdtempSync(join(tmpdir(), "devin-send-denied-"));
+    process.env.OPENCODEX_HOME = home;
+    delete process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+    const apiKey = "devin-denied-key";
+    setCachedCatalogForTests({
+      apiKey,
+      host: DEVIN_API_SERVER,
+      fetchedAt: Date.now(),
+      byUid: new Map([["swe-2", { modelUid: "swe-2", label: "SWE-2", disabled: false }]]),
+    });
+    // Nothing left to spend: the same state an earlier combo fan-out or empty-response recovery
+    // leaves behind before this turn starts.
+    const budget = budgetOf(0);
+    const observed: Array<{ ordinal: number; recovery?: string }> = [];
+    const urls: string[] = [];
+    const events: AdapterEvent[] = [];
+    const adapter = createDevinAdapter({
+      adapter: "devin", baseUrl: DEVIN_API_SERVER, apiKey,
+    } as unknown as OcxProviderConfig);
+
+    try {
+      await adapter.runTurn?.(
+        {
+          modelId: "swe-2", stream: true, options: {},
+          context: { messages: [{ role: "user", content: "hi" }] },
+        } as unknown as OcxParsedRequest,
+        {
+          headers: new Headers(),
+          translatorBudget: createTestTranslatorBudget(),
+          sendBudget: budget,
+          providerFetch: (async input => {
+            urls.push(String(input));
+            return new Response("busy", { status: 500 });
+          }) as typeof fetch,
+          onPhysicalSend: send => { observed.push(send); },
+        },
+        event => events.push(event),
+      ).catch(() => { /* the refusal escapes the adapter for the caller to map */ });
+    } finally {
+      setCachedCatalogForTests(null);
+      if (previousHome === undefined) delete process.env.OPENCODEX_HOME;
+      else process.env.OPENCODEX_HOME = previousHome;
+      if (previousJwtFlag === undefined) delete process.env.OPENCODEX_DEVIN_SEND_USER_JWT;
+      else process.env.OPENCODEX_DEVIN_SEND_USER_JWT = previousJwtFlag;
+      removeTreeWithRetry(home);
+    }
+
+    expect(urls.filter(url => url.includes("GetChatMessage"))).toHaveLength(0);
+    expect(observed).toEqual([]);
+    expect(budget.used).toBe(0);
+  });
 });
 
 const kiroProvider = {
