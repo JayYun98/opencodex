@@ -121,17 +121,23 @@ describe("upstream sends per logical request", () => {
       defaultProvider: "devin",
       providers: {
         devin: {
-          adapter: "devin", baseUrl: DEVIN_API_SERVER, apiKey, models: ["swe-2"],
+          // `authMode` is what admits this row on the counted path; without it the turn is
+          // refused before the adapter runs and the send this case is about never happens.
+          adapter: "devin", baseUrl: DEVIN_API_SERVER, authMode: "key", apiKey, models: ["swe-2"],
         },
       },
     } as unknown as OcxConfig;
 
     try {
       const response = await handleResponses(responsesRequest("devin/swe-2"), config, logCtx);
-      await response.text();
+      const body = await response.text();
 
-      expect(urls.filter(url => url.includes("GetChatMessage"))).toHaveLength(1);
-      expect(totalSends(logCtx)).toBe(1);
+      // Reported together, with the status, so a turn that never reaches the adapter says so
+      // instead of presenting as an empty URL list.
+      expect({
+        chatCalls: urls.filter(url => url.includes("GetChatMessage")).length,
+        totalSends: totalSends(logCtx),
+      }, `status ${response.status}: ${body.slice(0, 200)}`).toEqual({ chatCalls: 1, totalSends: 1 });
     } finally {
       if (previousHome === undefined) delete process.env.OPENCODEX_HOME;
       else process.env.OPENCODEX_HOME = previousHome;
