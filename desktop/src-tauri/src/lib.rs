@@ -3,6 +3,7 @@ mod discovery;
 mod first_run;
 mod formatting;
 mod logging;
+mod popup;
 mod proxy;
 mod sidecar;
 mod tray;
@@ -39,6 +40,7 @@ impl AppState {
 
 #[tauri::command]
 fn show_dashboard(app: tauri::AppHandle) {
+    popup::hide(&app);
     if let Some(window) = app.get_webview_window("main") {
         window::show(&window);
     }
@@ -55,6 +57,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
+                popup::hide(app);
                 window::show(&window);
             }
         }))
@@ -105,6 +108,13 @@ pub fn run() {
             // Before the tray, so its Start at Login checkbox reads the state this leaves behind
             // rather than the state from before first run.
             first_run::apply_start_at_login_default(app.handle());
+            #[cfg(target_os = "linux")]
+            {
+                // A desktop environment may not expose AppIndicator icons.
+                let _ = tray::install(app.handle(), proxy);
+                window::show(&window);
+            }
+            #[cfg(not(target_os = "linux"))]
             tray::install(app.handle(), proxy)?;
             if !cfg!(debug_assertions) {
                 updater::start_background_checks(app.handle().clone());

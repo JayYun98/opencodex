@@ -42,10 +42,6 @@ impl ProxyClient {
         self.get("/api/companion/settings").await
     }
 
-    pub async fn usage_summary(&self) -> Result<Value, ProxyError> {
-        self.get("/api/usage?range=7d").await
-    }
-
     pub async fn usage_today(&self) -> Result<Value, ProxyError> {
         self.get("/api/usage?range=today").await
     }

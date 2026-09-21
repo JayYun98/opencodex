@@ -8,7 +8,7 @@ and owns the tray, autostart, single-instance, and window lifecycle behavior.
 `desktop/ui/` is only a short bootstrap page. Once `/healthz` answers, the shell
 navigates the webview to the proxy's loopback dashboard
 (`/#/usage`) rather than bundling or serving `gui/dist` itself.
-Only the bootstrap page has Tauri IPC capability; the loopback dashboard never
+Only the bootstrap page has Tauri IPC capability; the loopback dashboard and usage popup never
 does because `dangerousRemoteDomainIpcAccess` is not configured.
 
 `desktop/src-tauri/src/first_run.rs` turns Start at Login on once per installation,
@@ -44,6 +44,29 @@ This is presence telemetry only; management
 authentication remains in the shared API boundary.
 The desktop webview uses a Mozilla-compatible `OpenCodexDesktop/` user-agent
 marker, which the GUI detects to identify the shell without using IPC.
+
+## Usage popup
+
+`desktop/src-tauri/src/popup.rs` owns a lazy, reusable compact webview at the proxy's
+`/#/tray` route. It uses the dashboard user agent and existing GUI session bootstrap,
+never Rust-to-JavaScript token injection or remote IPC capabilities. Its navigation
+boundary recognizes only the configured loopback origin. Dashboard navigation reuses
+the main window; closing or losing focus hides the popup. Positioning clamps the popup
+to the selected monitor's work area in physical pixels after applying its scale factor.
+The native tray retains its management actions and a Show usage entry for environments
+where tray click events are unavailable.
+On Linux, startup also reveals the dashboard and tolerates tray setup failure so
+desktop environments without AppIndicator support remain usable.
+
+## Tray usage display
+
+`desktop/src-tauri/src/tray.rs` reuses the authenticated today's-usage endpoint for both
+its headline and compact menu summary. Manual refresh and the existing 60-second refresh
+share the same path. Existing companion preferences govern Today and Cost visibility;
+icon-only clears the previously displayed title. Explicit usage errors and missing
+measurement/pricing coverage must not become a fresh zero reading.
+`desktop/src-tauri/src/formatting.rs` only strips trailing zeros from fractional digits,
+so integer magnitudes such as `10M` survive in tray and widget formatting.
 
 ## Release packaging and updater
 
